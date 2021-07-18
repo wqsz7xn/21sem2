@@ -1,7 +1,12 @@
+* Distributed Systems
 
-#+DOWNLOADED: screenshot @ 2021-07-19 08:46:55
-[[file:images/2021-07-19_08-46-55_screenshot.png]]
-
-#+DOWNLOADED: screenshot @ 2021-07-19 08:46:57
-[[file:images/2021-07-19_08-46-57_screenshot.png]]
-
+#+DOWNLOADED: screenshot @ 2021-07-19 11:29:36
+[[file:images/Distributed_Systems/2021-07-19_11-29-36_screenshot.png]]
+- Any kind of system where computation is spread across multiple machines
+  - How do we communicate at a lower and a higher level?
+  - Example is a client/server model where the server processes a request from
+    the client and then the server sends it back
+  - Databases can further split the client/server model as the database is often
+    stored on its own machine (not on the server
+  - These client/server/databases are all communicating at TCP/IP generally
+    (lower level) and then there are higher level protocols that you can use
