@@ -10,3 +10,64 @@
     stored on its own machine (not on the server
   - These client/server/databases are all communicating at TCP/IP generally
     (lower level) and then there are higher level protocols that you can use
+
+** Networking Infrastructure
+- Networking infrastructure exhibits the following characteristics
+  - Computers and links can fail independently
+  - Switches have finite space for storing packets
+  - Individual links vary in terms of bandwidth capacity
+  - Data can be corrupted during transmission
+  - Switches store routing tables that they dynamically update based on
+    knowledge of congested links and failed switches
+
+** Network Protocols
+
+#+DOWNLOADED: screenshot @ 2021-07-19 11:37:03
+[[file:images/Distributed_Systems/2021-07-19_11-37-03_screenshot.png]]
+
+- Network protocols are organised into layers
+  - Application layer protocols address the needs of particular applications
+  - Transport protocols provide for process-to-process communication
+  - The network layer provides a packet delivery service between host machines
+- Higher-level protocols use the services of the layer directly beneath them
+  - A layer depends on the interface of its underlying layer and not its
+    implementation (meaning that each layer is completely independent of one
+    another, meaning that layers above and below can change)
+- Generally IP is pretty unreliable but we build on top of that with TCP which
+  has some reliability
+- UDP generally provides speed without error checking
+
+** Internet Protocol (IP)
+
+#+DOWNLOADED: screenshot @ 2021-07-19 11:43:15
+[[file:images/Distributed_Systems/2021-07-19_11-43-15_screenshot.png]]
+
+#+DOWNLOADED: screenshot @ 2021-07-19 11:44:28
+[[file:images/Distributed_Systems/2021-07-19_11-44-28_screenshot.png]]
+
+- All of the data is split into packets, these packets are passed into the
+  switches which all have routing information to get to the other
+  destination. This protocol is unreliable because we don't know if each switch
+  has up to date information, we don't know if they are going to fail, we don't
+  know if data is going to be corrupted
+
+** Transmission Control Protocol (TCP)
+
+#+DOWNLOADED: screenshot @ 2021-07-19 11:49:24
+[[file:images/Distributed_Systems/2021-07-19_11-49-24_screenshot.png]]
+
+- Because of unreliability of IP we need more reliability for more serious uses,
+  TCP is a stream abstraction which is an illusion that they are sending data
+  directly to the host where the switches are basically just abstracted away
+- TCP is a transport protocol that establishes a *virtual connection* between a
+  pair of processes: a bi-directional *stream* abstraction that hides several
+  network characteristics:
+  - *Message sizes / boundaries*: The application simply reason and writes data
+    from/to the stream - the TCP layer decides how much data to accumulate in
+    the sender before it creates packets and passes them down to the IP layer
+  - *Message destinations*: Once a stream has been established, the "connected"
+    processes can use the stream without knowledge of pots and IP addresses
+  - Lost messages
+  - Message duplication and ordering
+  - Flow control
+  - Ordering of messages (each message is numbered so that you can order them
