@@ -1,5 +1,4 @@
 * Distributed Systems
-
 #+DOWNLOADED: screenshot @ 2021-07-19 11:29:36
 [[file:images/Distributed_Systems/2021-07-19_11-29-36_screenshot.png]]
 - Any kind of system where computation is spread across multiple machines
@@ -71,3 +70,177 @@
   - Message duplication and ordering
   - Flow control
   - Ordering of messages (each message is numbered so that you can order them
+
+** Java serialization
+- We can wrap the raw TCP streams with java's InputStream/OutputStream so that
+  we can encode/decode primitives directly to/from the stream (instead of just
+  bytes). We can also do strings
+- If we want to do more complex objects then we have to write a serialisation
+  routine that can encode/decode the object to/from bytes
+  - We can achieve this by using an ObjectOutputStream and an ObjectInputStream
+
+#+DOWNLOADED: screenshot @ 2021-07-19 13:05:39
+[[file:images/Distributed_Systems/2021-07-19_13-05-39_screenshot.png]]
+
+** Java Serialization
+- The `implements Serializable` is just a marker class, you don't have to
+  implement any functions
+- When serializing an object O, the following information is written out in
+  binary form:
+  - O's state: the values of I's instance variables
+  - The state of all objects: once only - that are reachable from O
+  - A description of each class, and its superclasses, of objects begin written
+
+#+DOWNLOADED: screenshot @ 2021-07-19 13:12:33
+[[file:images/Distributed_Systems/2021-07-19_13-12-33_screenshot.png]]
+
+- The first two are forms, which include the name, version of the form, class
+  handle and then the instance variables
+- Then write out a form of ==ch0== with fields "Tim" etc. These must match in
+  order
+- == 2 oh1 oh3 == which is the ArrayList of size two with two objects
+
+** Applications of Serialization
+- 1) Sending an object structure over a network connection
+- 2) Persisting an object graph to disk
+- 3) Making a deep copy of an object graph in memory
+
+#+DOWNLOADED: screenshot @ 2021-07-19 13:16:38
+[[file:images/Distributed_Systems/2021-07-19_13-16-38_screenshot.png]]
+
+* CAP theorem
+- The CAP theorem states that a distributed system cannot simultaneously be
+  consistent, available and tolerant against network partition failures
+
+#+DOWNLOADED: screenshot @ 2021-07-19 13:28:21
+[[file:images/CAP_theorem/2021-07-19_13-28-21_screenshot.png]]
+
+** Partitioning
+- Consistency: all parts of the system agree on a truth
+- Available: Means that clients can access each other
+- Partition failures: if some part of the network between the communicating
+  system goes down then the system will be able to function. To achieve this we
+  need some replication. If the network has a route go down it can go to a
+  replica and keep running in a correct way
+
+** Availability
+#+DOWNLOADED: screenshot @ 2021-07-19 18:13:43
+[[file:images/CAP_theorem/2021-07-19_18-13-43_screenshot.png]]
+
+- So for availability we are encouraged not to have a single point of
+  failure. Thus in the master/slave model if the master were to fail then the
+  slave would take over, but if the link between the service and the master were
+  to fail then the *whole system* would fail
+- Instead (to correct this) we would like to use a *master/master* model which
+  means that they are all masters, this means that we have lots of alternative
+  pathways which increases availability
+  - The problem is that with more masters we need a way to keep them consistent
+
+** Consistency
+#+DOWNLOADED: screenshot @ 2021-07-19 18:17:07
+[[file:images/CAP_theorem/2021-07-19_18-17-07_screenshot.png]]
+
+- In the left we are just saying that if there is no replication then there is
+  no need to worry about consistency, but then your system if fragile in the
+  case that your database goes down
+- On the right we are saying that the database should be consistent enough that
+  you are able to write to #1 and then read from #2 for the same value and then
+  that request should work
+  - This is generally not achievable without some sort of latency.
+- In summary we need to be able to make a trade off between the three attributes
+  of CAP for our solution
+
+** Active replication
+- Active replication involves clients sending requests to all replicas
+- Atomic multicast protocols and middleware are used to ensure order and
+  atomicity
+  - *Order:* Given invocations ==op(arg)== and ==op'(arg')== by clientA and
+    clientB,k if replicated servers i and j process the invocations they do so
+    in the same order
+  - *Atomicity:* Given invocation ==op(arg)== by clientA, if one server replica
+    processes the request then every non-crashed replica also processes the
+    request
+
+
+#+DOWNLOADED: screenshot @ 2021-07-19 18:23:36
+[[file:images/CAP_theorem/2021-07-19_18-23-36_screenshot.png]]
+
+- This shows that the ordering is broken then the consistency fails. This is
+  solved by multicast and TCP with the drawback of latency (which is quite
+  large) and still doesn't 100% guarantee consistency because what if one of the
+  servers crashes? Then we would not be consistent with none of the other
+  servers but at no fault of the software, thus we need even more software in
+  order to get it consistent again
+
+** Master / Master Replication
+- In practice, Master / Master replication is used where temporary inconsistency
+  can be tolerated
+- Replicas "gossip" synchronisation messages to achieve eventual consistency
+
+#+DOWNLOADED: screenshot @ 2021-07-19 18:32:21
+[[file:images/CAP_theorem/2021-07-19_18-32-21_screenshot.png]]
+
+- This is less strict than active replication, we are sharing our state with a
+  gossip protocol
+
+** DNS
+- We are looking at this because it's a distributed system
+- The DNS (Domain Name System) is the internets lookup service that maps domain
+  names to IP addresses
+- Key non-functional requirements for the DNS include scalability and
+  availability
+  - To meet these requirements, DNS has been designed using replication,
+    partitioning and caching tactics
+
+*** Partitioning
+- The names are partitioned over a hierarchy of servers each of which hold a
+  subset of mappings
+- They each know about above on below mappings and how to get to them, if it's
+  something like auckland.ac.nz it would go the .nz, which goes the .ac which
+  would then fill the request
+  
+
+#+DOWNLOADED: screenshot @ 2021-07-19 19:09:39
+[[file:images/CAP_theorem/2021-07-19_19-09-39_screenshot.png]]
+
+- We need replication because if .com goes down then all the .com lookups would
+  fail which would be a huge disaster, with replication the calls to .com can be
+  routed
+
+*** Example lookup
+
+#+DOWNLOADED: screenshot @ 2021-07-19 19:12:26
+[[file:images/CAP_theorem/2021-07-19_19-12-26_screenshot.png]]
+
+- There are 10 messages that need to be sent, but in reality this is very quick
+  and well optimized, this is also load balanced which helps with scalability
+
+*** Caching
+- In practice, caching is critical to DNS' performance
+- DNS servers cache the IP addresses of other DNS servers they discover when
+  processing queries
+- Cached data may become stale - authoritative servers associate TTL (time to
+  live) values with name to address mappings
+
+
+#+DOWNLOADED: screenshot @ 2021-07-19 19:14:37
+[[file:images/CAP_theorem/2021-07-19_19-14-37_screenshot.png]]
+
+- There is an obvious tradeoff between long TTL values and short TTL values. The
+  former aids in performance while the latter aids in consistency
+
+* Distributed File Sharing
+- Peers store content
+- Indexing servers do not store content, but mappings identifying which peers
+  store which files
+- Distributed content is immutable and arbitrarily replicated
+- Indexing servers replicate mappings: but don't guarantee consistency
+
+#+DOWNLOADED: screenshot @ 2021-07-19 19:17:53
+[[file:images/Distributed_File_Sharing/2021-07-19_19-17-53_screenshot.png]]
+
+- No need for strict consistency within the indexing servers, if it provides one
+  or two peers that have gone offline then it would just use other
+  peers. Furthermore because of the DHT mechanism of discovery people are able
+  to get peers via this and don't really need indexing servers anymore (just a
+  magnet/starting point into the swarm)
