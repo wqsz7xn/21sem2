@@ -1,0 +1,16 @@
+- End goal: achieve speedup of k fold when you have k processors, in the real
+  world this doesn't happen but we want to be as close to this as possible, this
+  is the upperbound limit
+* Parallel Computing Platform
+- Logical Organization
+  - The user's view of the machine as it is being preseent via its system
+    software
+- Physical Organization
+  - The actual hardware architecture
+- Physical architecture is to a large extent independent of the logical
+  architecture
+* Evaluation Metrics for ICNs
+- Symmetry
+* Interconnected networks
+* Misc
+- OpenMP second assignment
