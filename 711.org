@@ -1,75 +1,174 @@
-* Parallel Programs
-** Task, Data and Synchronisation
-- Task parallelism: Where you partition tasks carried out in solving the problem
-  among the cores and each core carries out more or less similar operations on
-  its part of the data
-  - Where each marker only marks a single question out of all the questions for
-    the papers, cores in this case are carrying out different operations for
-    each core
-- Data parallelism: Where you have an amount of data and then you split that
-  data amongst the cores and they do the whole workload for that data
-  - Where each marker marks whole papers but the stack of papers is split
-    between all of the markers, everyone in this context is executing roughly
-    the same operations
-- The last type is synchronisation where there must be sync point in order for
-  the algorithms to be working together (because each core works at its own pace), therefore if the master core is making data available first then the other cores can't just race off and start computing before the master core has even put up the data, a sync point must be used
-** Types of Memory
-- Shared and distributed, where shared each core can share memory while in the
-  distributed setting you have to assume that all memory is private to each core
-  (or to each cluster of cores) (shared memory within a multi CPU environment)
-
-
-#+DOWNLOADED: screenshot @ 2021-07-20 18:38:25
-[[file:images/Parallel_Programs/2021-07-20_18-38-25_screenshot.png]]
-
-* Parallel Hardware and Parallel Software
-- Memory is used to store both program and data instructions
-- Program instructions are coded data which tell the computer to do something
-- Data is simply information to be used by the program
-- A central processing unit (CPU) gets instructions and/or data from memory,
-  decodes the instructions and then *sequentially* performs them
-
-#+DOWNLOADED: screenshot @ 2021-07-20 19:26:35
-[[file:images/Parallel_Hardware_and_Parallel_Software/2021-07-20_19-26-35_screenshot.png]]
-
-** Cache mappings
-- *fully associative cache*: is one in which a new line can be placed at any
-  location in the cache
-- *direct mapped*: in which each cache line has a unique location in the cache
-  to which it will be assigned
-- intermediate solutions are called n-way set associative
-
-* Instruction-level Parallelism
-- An attempt to improve processor performance by having multiple processor
-  components (*functional units*) simultaneously executing instructions. There
-  are two types, *pipelining* and *multiple issue*
-** Pipelining
-- Divide the machinery for the algorithm into different logical blocks, while
-  you are computing the last stage of the algorithm for data x, you can already
-  be phasing in data y at the start of the block, this means that one piece of
-  computation doesn't have to wait until the other is fully done. not k stage ->
-  k fold improvement
-* Misc
-- *Write back scheme*: where you write to a piece of memory and put a bit on it
-  to indicate that it is dirty, then when it is evicted from memory the bit is
-  then checked and if it's a dirty address then you write it back to disk so
-  that it can be updated
-  
-
-
+* Lecture 1
 - End goal: achieve speedup of k fold when you have k processors, in the real
   world this doesn't happen but we want to be as close to this as possible, this
   is the upperbound limit
-* Parallel Computing Platform
-- Logical Organization
-  - The user's view of the machine as it is being preseent via its system
-    software
-- Physical Organization
-  - The actual hardware architecture
-- Physical architecture is to a large extent independent of the logical
-  architecture
-* Evaluation Metrics for ICNs
+** Elements of a Parallel Computer
+ - Hardware
+   - Multiple processes
+   - Multiple memories
+   - Interconnection network (ICN)
+ - System Software
+   - Parallel operating system
+   - Programming constructs to express/orchestrate concurrency
+ - Application Software
+   - Parallel Algorithms
+    
+** Parallel Computing Platform
+ - Logical Organization
+   - The user's view of the machine as it is being preseent via its system
+     software
+ - Physical Organization
+   - The actual hardware architecture
+ - Physical architecture is to a large extent independent of the logical
+   architecture
+
+** Logical Organization Elements
+- Control Mechanism
+  - SISD/SIMD/MIMID/MISD
+    - Single/Multiple Instruction Stream & Single/Multiple Data sream
+  - SPMD: single program multiple data
+
+#+DOWNLOADED: screenshot @ 2021-07-21 19:04:34
+[[file:images/Lecture_1/2021-07-21_19-04-34_screenshot.png]]
+
+** Logical Organization Elements
+- Communication Model
+  - Shared-address space
+  - Message passing
+  - UMA/NUMA/ccNUMA
+- These are the ways that our processors are communicating (how they are sharing
+  memory)
+  #+DOWNLOADED: screenshot @ 2021-07-21 19:06:09
+  [[file:images/Lecture_1/2021-07-21_19-06-09_screenshot.png]]
+- *A*: where all of the processors are sharing an address space
+- *B*: where all of the processors have their own local address space and are
+  also sharing an address space for all processors
+- *C*: where all processors have their own address space and nothing else,
+  communication is from local address space to local address space only
+
+** Physical Organization
+- Ideal parallel computer architecture is PRAM (parallel random access machine)
+- PRAM models:
+  - EREW/ERCW/CREW/CRCW
+    - Exclusive/Concurrent Read or and write
+    - Basically this is all of the read locks and write locks stuff that you
+      have covered from SQL, where write locks and read locks don't coexist, but
+      multiple read locks can
+  - Concurrent writes are resolved via
+    - Common/arbitrary/priority/sum
+** Physical Organization
+- Interconnection Networks (ICN)
+  - Provide processor-to-processor and processor-to-memory connections
+  - Networks are classified as the following
+*** Static
+- Consistent of a number of point to point links
+  - direct network
+- Historically used to link processor to processor
+  - Distributed memory system
+*** Dynamic
+- The network consisted of switching elements that the various processors attach
+  to
+  - Indirect network
+- Historically used to link processors to memory
+  - shared memory systems
+** Static and Dynamic ICNs
+
+#+DOWNLOADED: screenshot @ 2021-07-21 19:14:24
+[[file:images/Lecture_1/2021-07-21_19-14-24_screenshot.png]]
+
+** Evaluation Metrics for ICNs
+- Diameter
+  - The maximum distance between any two nodes (smaller the better)
+- Connectivity
+  - The minimum number of arcs that must be removed to break it into two
+    disconnected networks (larger the better) (measures the multiplicity of
+    paths)
+- Bisection width
+  - The minimum number of arcs that must be removed to partition the network into
+    two equal halves (larger the better)
+- Bisection bandwidth
+  - Applies to networks with weighted arcs: weights correspond to the link width
+    (how much data it can transfer)
+  - The minimum volume of communication allowed between any two halves of a
+    network (larger the better)
+- Cost
+  - The number of links in the network (smaller is better)
 - Symmetry
-* Interconnected networks
+
+#+DOWNLOADED: screenshot @ 2021-07-21 19:19:16
+[[file:images/Lecture_1/2021-07-21_19-19-16_screenshot.png]]
+
+** Network Typologies
+- Bus based networks
+  - Shared medium
+  - information is being broadcasted
+  - Evaluation
+    - Diameter: O(1)
+    - Connectivity: O(1)
+    - Bisection width: O(1)
+    - Cost: O(p)
+
+
+#+DOWNLOADED: screenshot @ 2021-07-21 19:21:03
+[[file:images/Lecture_1/2021-07-21_19-21-03_screenshot.png]]
+
 * Misc
 - OpenMP second assignment
+
+** Parallel Programs
+*** Task, Data and Synchronisation
+ - Task parallelism: Where you partition tasks carried out in solving the problem
+   among the cores and each core carries out more or less similar operations on
+   its part of the data
+   - Where each marker only marks a single question out of all the questions for
+     the papers, cores in this case are carrying out different operations for
+     each core
+ - Data parallelism: Where you have an amount of data and then you split that
+   data amongst the cores and they do the whole workload for that data
+   - Where each marker marks whole papers but the stack of papers is split
+     between all of the markers, everyone in this context is executing roughly
+     the same operations
+ - The last type is synchronisation where there must be sync point in order for
+   the algorithms to be working together (because each core works at its own pace), therefore if the master core is making data available first then the other cores can't just race off and start computing before the master core has even put up the data, a sync point must be used
+*** Types of Memory
+ - Shared and distributed, where shared each core can share memory while in the
+   distributed setting you have to assume that all memory is private to each core
+   (or to each cluster of cores) (shared memory within a multi CPU environment)
+
+
+ #+DOWNLOADED: screenshot @ 2021-07-20 18:38:25
+ [[file:images/Parallel_Programs/2021-07-20_18-38-25_screenshot.png]]
+
+** Parallel Hardware and Parallel Software
+ - Memory is used to store both program and data instructions
+ - Program instructions are coded data which tell the computer to do something
+ - Data is simply information to be used by the program
+ - A central processing unit (CPU) gets instructions and/or data from memory,
+   decodes the instructions and then *sequentially* performs them
+
+ #+DOWNLOADED: screenshot @ 2021-07-20 19:26:35
+ [[file:images/Parallel_Hardware_and_Parallel_Software/2021-07-20_19-26-35_screenshot.png]]
+
+*** Cache mappings
+ - *fully associative cache*: is one in which a new line can be placed at any
+   location in the cache
+ - *direct mapped*: in which each cache line has a unique location in the cache
+   to which it will be assigned
+ - intermediate solutions are called n-way set associative
+
+** Instruction-level Parallelism
+ - An attempt to improve processor performance by having multiple processor
+   components (*functional units*) simultaneously executing instructions. There
+   are two types, *pipelining* and *multiple issue*
+*** Pipelining
+ - Divide the machinery for the algorithm into different logical blocks, while
+   you are computing the last stage of the algorithm for data x, you can already
+   be phasing in data y at the start of the block, this means that one piece of
+   computation doesn't have to wait until the other is fully done. not k stage ->
+   k fold improvement
+** Misc
+ - *Write back scheme*: where you write to a piece of memory and put a bit on it
+   to indicate that it is dirty, then when it is evicted from memory the bit is
+   then checked and if it's a dirty address then you write it back to disk so
+   that it can be updated
+  
