@@ -112,9 +112,93 @@
 #+DOWNLOADED: screenshot @ 2021-07-21 19:21:03
 [[file:images/Lecture_1/2021-07-21_19-21-03_screenshot.png]]
 
+- Crossbar Networks
+  - Switch-based network
+  - Supports simultaneous connections
+  - Evaluation:
+    - Diameter: O(1)
+    - Connectivity: O(1)
+    - Bisection width: O(p), you can split it in half and still have half the
+      network communicate 
+    - Cost: O(p^2)
+
+#+DOWNLOADED: screenshot @ 2021-07-22 13:57:16
+[[file:images/Lecture_1/2021-07-22_13-57-16_screenshot.png]]
+- Multistage Interconnection Networks
+
+#+DOWNLOADED: screenshot @ 2021-07-22 13:57:38
+[[file:images/Lecture_1/2021-07-22_13-57-38_screenshot.png]]
+- You have to send through multiple stages in order for processors to
+  communicate, the communication time is delayed
+- The cost is much lower
+
+- Multistage Switch Architecture
+
+#+DOWNLOADED: screenshot @ 2021-07-22 13:59:30
+[[file:images/Lecture_1/2021-07-22_13-59-30_screenshot.png]]
+- Far less wires, but your communication from address to address is constrained
+  by ==log(n)==
+- Connecting the Various Stages
+
+#+DOWNLOADED: screenshot @ 2021-07-22 13:59:45
+[[file:images/Lecture_1/2021-07-22_13-59-45_screenshot.png]]
+
+- "The perfect shuffle"
+** Blocking in a Multistage Switch
+- Routing is done by comparing the bit-level representation of source and
+  destination addresses
+- match goes via pass-through
+- Mismatch goes via cross-over
+
+#+DOWNLOADED: screenshot @ 2021-07-22 14:08:16
+[[file:images/Lecture_1/2021-07-22_14-08-16_screenshot.png]]
+
+#+DOWNLOADED: screenshot @ 2021-07-22 15:16:44
+[[file:images/Lecture_1/2021-07-22_15-16-44_screenshot.png]]
+- a) is good if there are no master/slaves
+- b) is good for master/slave, there is no need for any of the slaves to
+  communicate
+
+* Lecture 2
+** Hypercubes
+- Look at hamming distance for hypercubes
+** Trees
+ - If you have two neighbouring processing nodes then you don't have to travel
+   very far
+** Summary
+- You can tell that a completely connected netowrk is nice but cost prohibitive
+** Hypercubes revisted
+- These can be generated using Cayley Graphs
+** Broadcast (telephone communication)
+- Broadcast network, you call your friend and they call their friend, every step
+  the number of nodes who know about the information doubles
+- Soonest everyone can be informed is thus in log(n) steps (n is the number of nodes)
+- Broadcast vs gossip
+  - gossip is everyone has information while in broadcast there is one souce of
+    information
+** Physical Organization
+- Cache Coherence is when there is a clash in memory because it's stored in two
+  different bits of memory that is different from the main global memory
+- Ensure that a local cache is coherent with the value that is in the main
+  memory
+  - Invalidate and update in order to do this
+** Topology Embieddings
+- You would use some processors in this system in order to create this mapping
+- We want a small dilation????
+- Meshes map easily onto hypercubes and that's why they are famous
 * Misc
 - OpenMP second assignment
-
+** SIMD
+- Single instruction multiple data stream
+- the same instruction is execute synchronously by all processing units
+** MIMD
+- Each processing element is capable of executing a different program
+  independent of the other processing elements
+- SIMD computers require less hardware the MIMD computers because they have only
+  one global control unit. Furthermore, SIMD computers require less memory
+  because only one copy of the program needs to be stored. In contracts, MIMD
+  computers store the program and operating system at each processor
+** Communication Model of Parallel Platforms
 ** Parallel Programs
 *** Task, Data and Synchronisation
  - Task parallelism: Where you partition tasks carried out in solving the problem
