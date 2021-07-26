@@ -186,6 +186,105 @@
 - You would use some processors in this system in order to create this mapping
 - We want a small dilation????
 - Meshes map easily onto hypercubes and that's why they are famous
+* Lecture 3
+Now that we have covered some mappings and topologies we are going to go through
+some algs (sequential)
+** Dense Matrix-Vector Multiplication
+- ==O(n^2)==, two nested for loops
+- hopefully when we are parallelising this then you're going to get a better
+  order than n^2
+** Dense Matrix-Matrix Multiplication
+- Two matrices multiplied which is ==O(n^3)==, remember you can makes this
+  better by using divide and conquer
+** Sparse Matrix-Vector Multiplication
+- Hopefully we can do better than n^2 when we have less than n^2 entries in the
+  matrix or vector, in the diagram the black dots are non-zero, obvious if
+  something is zero we can skip that multiplication because it's obviously going
+  to be zero when we are done with it
+** Floyd's All-Pairs Shortest Path
+- The shortest path between all pairs of nodes the in the graph. It's a O(n^3),
+  you're basically bruting for a shortest path
+** Quicksort
+- Using element q (picked at random) as a pivot, where everything to the left is
+  less than q and everything to the right is greater than q. You then apply this
+  recursively to the subparts
+- Although this algorithm in the lides might be a bit different, don't be too
+  surprised about this
+** Minimum Finding
+Nothing to note, he talked about FP being able to reduce this though
+** 15-Puzzle Problem
+- Final goal state is a sorted magic square
+- You should look this up, i havne't seen this before
+- You want to find the shortest solution (in number of moves) or just a
+ solution
+- You're just shuffling things around until you get an ordering
+** Parallel Algorithm vs Parallel Formulation
+- Parallel Formulation
+  - Refers to a parallelization of a serial algorithm, you're using the serial
+    algorithm and then you're parallelising it
+- Parallel Algorithm
+  - May represent an entirely different algorithm than that one used serially
+- We primarily focus on "Parallel Formulations"
+  - Our goal today is to primarily discuss how to develop such parallel
+    formulations
+  - Of course there will always be examples of "parallel algorithms" that were
+    not derived from serial algorithms
+** Elements of a Parallel Algorithm/Formulation
+- Pieces of work that can be done concurrently
+  - tasks
+- Mapping of the tasks onto multiple processors
+  - Processes vs Processors and how to balance the two
+- Distribution of input/output ^ intermediate data across the different
+  processors
+- Management the access of shared data
+  - Either input or intermediate
+- Synchronization of the processors at various points of the parallel execution
+- The best outcome is k processes decrease the runtime by k-fold
+** Finding Concurrent Pieces of Work
+- Decomposition
+  - The process of dividing the compution into smaller pieces of work, ie *tasks*
+    - Note that if you can identify this then you basically have done yourself a
+      huge favour because this is the hard part of this, usually when you figure
+      out how to do this step then you will have a good idea on how to do the
+      rest
+- Tasks are programmer dfined and are considered to be indivisible (they are the
+  minimum unit), also called the granularity of the  task
+** Example: Query Processing
+- The first (left) is better here because the subtasks are not as dependent as
+  the one on the right, precedence directed graph
+** Task-Dependency Graph (cont)
+- Key concepts derived from the task-dependency graph
+  - Degree of Concurrency
+    - The number of tasks that can be concurrently executed
+      - We usually care about the average degree of concurrency
+  - Critical Path
+    - The longest vertex-weighted path in the graph
+      - The weights represent task size, whatever is your longest critical task
+        is going to bound your runtime (weakest link mindset), you are trying to
+        minimize this
+      - Even though they have the same critical path, the first one is
+        preferable because it has better concurrency
+  - Tasks granularity affects both of the above characteristics
+** Task-Interaction Graph
+- Captures the pattern of interaction between tasks
+  - This graph usually contains the task-dependency graph as a subgraph
+    - I:e there may be interacgtions between tasks even if there are no
+      dependencies
+      - These interactions usually occur due to accesses on shared data
+
+#+DOWNLOADED: screenshot @ 2021-07-26 15:53:20
+[[file:images/Lecture_3/2021-07-26_15-53-20_screenshot.png]]
+- You are inserting an edge if there is some interaction between processors in
+  order to complete or compose tasks together
+
+** Tasks Dependency/Interactoin Graphs
+- These graphs are important in developing effectively mapping the tasks onto
+  the different processors
+  - Maximuze concurrency and minimuze overheads
+
+#+DOWNLOADED: screenshot @ 2021-07-26 15:55:45
+[[file:images/Lecture_3/2021-07-26_15-55-45_screenshot.png]]
+
 * Misc
 - OpenMP second assignment
 ** SIMD
