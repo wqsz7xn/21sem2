@@ -160,11 +160,38 @@
   communicate
 
 * Lecture 2
+** Network Topologies
+
+#+DOWNLOADED: screenshot @ 2021-07-23 13:45:32
+[[file:images/Lecture_2/2021-07-23_13-45-32_screenshot.png]]
+
+- Here the b) is better for master/slave type layouts while a) is better for a
+  type of network that has no masters/slaves where each processor is equal,
+  completely completed networks are nice but cost prohibitive
+
+#+DOWNLOADED: screenshot @ 2021-07-26 11:26:22
+[[file:images/Lecture_2/2021-07-26_11-26-22_screenshot.png]]
+
+
 ** Hypercubes
+   
+
+#+DOWNLOADED: screenshot @ 2021-07-26 11:26:56
+[[file:images/Lecture_2/2021-07-26_11-26-56_screenshot.png]]
+
+- Hypercubes are quite good for parallel computing because they have some nice
+  properties that are well balanced (check the table of properties to ensure
+  this). Furthermore they have a nice construction heuristic that allows us to
+  easily scale them up into multiple dimensions
 - Look at hamming distance for hypercubes
 ** Trees
  - If you have two neighbouring processing nodes then you don't have to travel
-   very far
+   very far, for example if you have two neighbouring processors and then you
+   want to get data from one to the other then you would only have to travel two
+   links (four links for a round trip). This is very little.
+ - Each leaf is a processing node and every internal node is a switching node,
+   every switching node combines the links from the children nodes (switches or
+   processing nodes) and combines them for the parent
 ** Summary
 - You can tell that a completely connected netowrk is nice but cost prohibitive
 ** Hypercubes revisted
@@ -255,4 +282,16 @@
    to indicate that it is dirty, then when it is evicted from memory the bit is
    then checked and if it's a dirty address then you write it back to disk so
    that it can be updated
-  
+** Arc Connectivity 
+A graph is k arc connected if k directed disjoint paths between any
+two vertices u and v exist. Below is an example of a two arc connected graph.
+
+#+DOWNLOADED: screenshot @ 2021-07-23 15:06:36
+[[file:images/Misc/2021-07-23_15-06-36_screenshot.png]]
+** Graph Diameter
+The diameter of a graph is the distance of the longest shortest path between any
+two nodes
+** Bisection Width
+When you split the network into two, how many links are you breaking? The
+bisection should be done in such a way that the number of links broken is
+minimised
