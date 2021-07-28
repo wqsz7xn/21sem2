@@ -1,0 +1,9 @@
+* 306 :306:
+** TODO Start group project and go to next meeting 
+   DEADLINE: <2021-07-28 Wed>
+* 325
+** TODO Watch the new lecture recordings and do the lab
+   DEADLINE: <2021-08-01 Sun>
+* 711
+** Assignment 1
+   DEADLINE: <2021-08-07 Sat>
