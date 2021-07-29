@@ -379,7 +379,7 @@
 - When the service is published the WSDL will be available to the network
 - You can make generated bindings to these WSDLs so that you don't have to write
   them yourself
-- UDDI Registry is a register on the network which enumerates of WDSL
+- UDDI Registry is a register on the network which enumerates of WSDL
   services. When the client is new to the network it can talk to the registry
   and then browse a list of services that it might want to consume
 
@@ -593,3 +593,78 @@
 
 #+DOWNLOADED: screenshot @ 2021-07-27 19:38:50
 [[file:images/Lecture_2/2021-07-27_19-38-50_screenshot.png]]
+* Tutorial 1
+** Question 1: Given these characteristics, what are three possible outcomes when trying to send a message from one host to another?
+- While the two computers have set up a session the link fails
+  - Either the connection times out
+  - Or the links in between the clients reroute the traffic after detecting that
+    the route it broken
+- Data can be corrupted during transmission, either due to packet loss or
+  flipped bits
+  - The client can either reconstruct the message if a redundancy scheme is used
+    like CRC
+  - Or can ask the client to resend the message (or part of the message)
+- A host can fail
+  - In that case the connection is killed/timed out
+- The packet arrives fine
+- Could arrive out of order
+- Packets could be dropped
+** Question 2: Consider the following ideas where appropriate: Logs, times, Acknowledgements packets, Sequence numbers, Checksums, Buffers
+- Logs: Logging when you have sent a message
+- Timers: When a client sends a message the client starts a timer to see if the
+  packet has been dropped on the network, it it times out then you would resend
+  the message
+- Acknowledgement packet: Client receives a message and sends an ACK to let the
+  sender know that they have received it
+- Sequence numbers: Packet ordering
+- Checksums: Packet integrity
+- Buffers
+- When the network is buff you buffer a message to be sent. The rate that you're
+  receiving messages is typically higher than the rate that you're sending them
+  so you need buffer space
+** Question 3: Java Serialization
+*** What are the three Java classes/interfaces required to support serialization and how are they used?
+- =Serializable= (marker interface)
+- =ObjectOutputStream=
+- =ObjectInputStream=
+*** What is one advantage and one disadvantage of using Java serializatoin as a data interchange format? 
+- Difficult to tell what type of data you have, you must do a cast
+- Easy to implement, just have to implement a single interface without even
+  having to manually write any code
+- Version of the class matters (client and server needs the same)
+- Both ends of the channel need to be java based. It's not an interchange
+  format-
+** Question 4
+*** What role does a servlet container play in a java-based distributed system using HTTP as a communication protocol?
+- It receives HTTP requests and parses the path and input, creates the servlet
+  and runs the required things and returns the output. It's doing all of the
+  heavy lifting that the client doesn't have to do. Acts as a server
+- Manages the servlet lifecycle, lets you host your servlet
+- A servlet is a server that's able to recieve and send HTTP requests and
+  responses, while the servlet manager routes the requests and responses
+*** When entering a URL into a web browser, what kind of HTTP request will be sent to the server?
+- GET request
+** Question 5
+*** a) What is the role of WSDL in a SOAP based web service?
+ - Describes what a SOAP service does, the types that it accepts and the types
+   that it needs and how to convert types
+ - It is a XMl based language 
+*** b) In REST, which four HTTP methods correspond to the RUD operations Create, REtrieve, Update & Delete
+- Create: POST
+- Retrieve: GET
+- Update: PUT
+- Delete: DELETE
+*** c)  What are the five REST principles? Describe each one briefly 
+  - Addressable resources; Any resources in a REST based system can be addressed
+    by a URI
+  - Uniform constraint interface: REST relies on the HTTP interface itself, it
+    uses them as intended by the HTTP protocol
+  - Representation orientation: Client and service can AGREE on a (or several
+    types of 
+  - HATEOS: Might include links to other content
+*** d) Compare sockets vs SOAP vs REST for creating distributed application. For each one, give one example where that technology might be preferred over the alternatives
+- using only TCP/UDP is lightweight, speed. If CPU is at a premium like most
+  integrated systems ore
+- SOAP has a nice interface for discovering and consuming unknown services
+- REST: Uses HTTP as it's meant to be used, so it's able to get all the benefits
+  of the optimisations of HTTP
