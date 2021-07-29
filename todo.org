@@ -10,5 +10,5 @@
 * Misc
 ** DONE Pub quiz
    DEADLINE: <2021-07-28 Wed>
-** Auckland Youth Choir performance
+** TODO Auckland Youth Choir performance
    DEADLINE: <2021-07-31 Sat>
