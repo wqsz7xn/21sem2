@@ -546,6 +546,138 @@ processors do this 4 times faster (holy grail case)
 [[file:images/Lecture_4/2021-07-28_16-49-38_screenshot.png]]
 
 ** TODO Up to Sources
+* Lecture 5
+** Sources of Overhead in Parallel Programs
+- The total time spent by a parallel system is usually higher than that spent by
+  a serial system to solve the same problem
+  - Overheads!
+    - Interprocessorsor communications and interactions
+    - Idling
+      - Load imbalance, synchronization, serial components
+    - Excess Computation
+      - Sub-optimal serial algorithm
+      - More aggregate computations
+- Goal is to minimize these overheads
+
+#+DOWNLOADED: screenshot @ 2021-07-29 15:05:17
+[[file:images/Lecture_5/2021-07-29_15-05-17_screenshot.png]]
+
+** Performance Metrics
+- Parllel Exection Time
+  - Time spent to solve a problem on p processors
+    - T_p
+  - Total Overhead Function
+    - T_o = p*T_p - T_s
+  - Speedup
+    - S = T_s / T_p
+    - Can we ahve superlinear speedup?
+      - Exploratory computations, hardware features
+  - Efficiency
+    - E = S/p
+  - Cost
+    - p * T_p (processor-time product)
+    - Cost optimal formulation
+  - Working example: Adding n elements on n processors
+
+#+DOWNLOADED: screenshot @ 2021-07-29 15:07:59
+[[file:images/Lecture_5/2021-07-29_15-07-59_screenshot.png]]
+** Effect of Granularity on Performance
+- Scaling down the number of processors
+- Achieving cost optimality
+- Naieve emulations vs Integelligent scaling down
+  - Naieve emulation meaning that you're simulating other processors using time
+    slices
+  - Adding n elements on p processors (below)
+** Scaling Down by Emulation
+
+#+DOWNLOADED: screenshot @ 2021-07-29 15:09:12
+[[file:images/Lecture_5/2021-07-29_15-09-12_screenshot.png]]
+
+#+DOWNLOADED: screenshot @ 2021-07-29 15:09:23
+[[file:images/Lecture_5/2021-07-29_15-09-23_screenshot.png]]
+
+- Intelligent scaling: More efficient way of utilising processors
+
+** Scalability of a Parallel System
+- The need to predict the performance of a parallel algorithm as p increases
+- Characteristics of the T_o function
+  - Linear on the number of processors
+    - Serial components
+  - Dependence on T_s
+    - Usually sub-linear
+- Efficiency drops as we increase the number of processors and keep the size of
+  the problem fixed
+- Efficiency increases as we increases the size of the problem and keep the
+  number of processors fixed
+- For the above look at graphs closely below
+
+#+DOWNLOADED: screenshot @ 2021-07-29 15:11:47
+[[file:images/Lecture_5/2021-07-29_15-11-47_screenshot.png]]
+
+
+** Scalable Formulations
+- There are two things: input size and number of processors
+- A parallel formulation is called /scalable/ if we can maintain the efficiency
+  constant when increasing p by increasing the size of the problem
+- Scalability and cost-optimality are related
+- Which systems is more scalable?
+
+#+DOWNLOADED: screenshot @ 2021-07-29 15:13:20
+[[file:images/Lecture_5/2021-07-29_15-13-20_screenshot.png]]
+
+- rows is input size and p is the number of processors here
+- entry is the efficiency
+- with one processors you're perfectly efficient (obvious)
+
+** Measuring Scalability
+- What is the /problem size/?
+- Isoefficiency function
+  - Measures the rate by which the problem size has to increase in relation to /p/
+- Algorithms that require the problem size to grow at a lower rate are more
+  scalable
+- Isoefficiency and cost-optimality
+- What is the best w can do in terms of isoefficiency?
+
+** Parallel Programming Models
+- 1. Message Passing Interface Model (MPI)
+  - Older cousin: Parallel Virtual Machine (PVM)
+- 2. Shared Address-Space Programming Model
+- Thread-based programming
+  - POSIX API/Pthreads (alternately Java/.Net threads)
+- Directive-based programming
+  - OpenMP API
+
+** MPI Programming Structure
+- Asynchronous
+  - Hard to reason
+  - Non-deterministic behavior
+- Loosely synchronous
+  - Synchronize to perform interactions
+  - Easier to reason
+- SPMD
+  - Single Program Multiple Data
+
+** Shared Memory Programming
+- Minimum overheads because near the same addresses and also using the same
+  processor clock
+- Communication is implicitly specified
+- Focus on constructors for expressing concurrency and synchronization
+  - Minimize data sharing overheads
+
+** Commonly Used Models
+- Process model
+  - All memory is local unless explicitly  specified/allocated as shared
+  - UNIX processes
+- Light-weight process/thread model
+  - All memory is global and can be asccessed by all the threads
+    - Runtime stack is local but it can be shared
+  - POSiX thread API/Pthreads
+    - Low-level & system-programming flavor to it
+- Directive model
+  - Concurrency is specified in terms of high-level compiler directives
+    - High-level constructs that leave some of the error-pron details to the
+      compiler
+    - OpenMP has emerged as a standard
 * Misc
 - OpenMP second assignment
 ** SIMD
