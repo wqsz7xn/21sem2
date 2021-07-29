@@ -1,0 +1,670 @@
+* Lecture 1
+** Distributed Systems
+ #+DOWNLOADED: screenshot @ 2021-07-19 11:29:36
+ [[file:images/Distributed_Systems/2021-07-19_11-29-36_screenshot.png]]
+ - Any kind of system where computation is spread across multiple machines
+   - How do we communicate at a lower and a higher level?
+   - Example is a client/server model where the server processes a request from
+     the client and then the server sends it back
+   - Databases can further split the client/server model as the database is often
+     stored on its own machine (not on the server
+   - These client/server/databases are all communicating at TCP/IP generally
+     (lower level) and then there are higher level protocols that you can use
+
+*** Networking Infrastructure
+ - Networking infrastructure exhibits the following characteristics
+   - Computers and links can fail independently
+   - Switches have finite space for storing packets
+   - Individual links vary in terms of bandwidth capacity
+   - Data can be corrupted during transmission
+   - Switches store routing tables that they dynamically update based on
+     knowledge of congested links and failed switches
+
+*** Network Protocols
+ #+DOWNLOADED: screenshot @ 2021-07-19 11:37:03
+ [[file:images/Distributed_Systems/2021-07-19_11-37-03_screenshot.png]]
+
+ - Network protocols are organised into layers
+   - Application layer protocols address the needs of particular applications
+   - Transport protocols provide for process-to-process communication
+   - The network layer provides a packet delivery service between host machines
+ - Higher-level protocols use the services of the layer directly beneath them
+   - A layer depends on the interface of its underlying layer and not its
+     implementation (meaning that each layer is completely independent of one
+     another, meaning that layers above and below can change)
+ - Generally IP is pretty unreliable but we build on top of that with TCP which
+   has some reliability
+ - UDP generally provides speed without error checking
+
+*** Internet Protocol (IP)
+ #+DOWNLOADED: screenshot @ 2021-07-19 11:43:15
+ [[file:images/Distributed_Systems/2021-07-19_11-43-15_screenshot.png]]
+
+ #+DOWNLOADED: screenshot @ 2021-07-19 11:44:28
+ [[file:images/Distributed_Systems/2021-07-19_11-44-28_screenshot.png]]
+
+ - All of the data is split into packets, these packets are passed into the
+   switches which all have routing information to get to the other
+   destination. This protocol is unreliable because we don't know if each switch
+   has up to date information, we don't know if they are going to fail, we don't
+   know if data is going to be corrupted
+
+*** Transmission Control Protocol (TCP)
+ #+DOWNLOADED: screenshot @ 2021-07-19 11:49:24
+ [[file:images/Distributed_Systems/2021-07-19_11-49-24_screenshot.png]]
+
+ - Because of unreliability of IP we need more reliability for more serious uses,
+   TCP is a stream abstraction which is an illusion that they are sending data
+   directly to the host where the switches are basically just abstracted away
+ - TCP is a transport protocol that establishes a *virtual connection* between a
+   pair of processes: a bi-directional *stream* abstraction that hides several
+   network characteristics:
+   - *Message sizes / boundaries*: The application simply reason and writes data
+     from/to the stream - the TCP layer decides how much data to accumulate in
+     the sender before it creates packets and passes them down to the IP layer
+   - *Message destinations*: Once a stream has been established, the "connected"
+     processes can use the stream without knowledge of pots and IP addresses
+   - Lost messages
+   - Message duplication and ordering
+   - Flow control
+   - Ordering of messages (each message is numbered so that you can order them
+
+*** Java serialization
+ - We can wrap the raw TCP streams with java's InputStream/OutputStream so that
+   we can encode/decode primitives directly to/from the stream (instead of just
+   bytes). We can also do strings
+ - If we want to do more complex objects then we have to write a serialisation
+   routine that can encode/decode the object to/from bytes
+   - We can achieve this by using an ObjectOutputStream and an ObjectInputStream
+
+ #+DOWNLOADED: screenshot @ 2021-07-19 13:05:39
+ [[file:images/Distributed_Systems/2021-07-19_13-05-39_screenshot.png]]
+
+*** Java Serialization
+ - The `implements Serializable` is just a marker class, you don't have to
+   implement any functions
+ - When serializing an object O, the following information is written out in
+   binary form:
+   - O's state: the values of I's instance variables
+   - The state of all objects: once only - that are reachable from O
+   - A description of each class, and its superclasses, of objects begin written
+
+ #+DOWNLOADED: screenshot @ 2021-07-19 13:12:33
+ [[file:images/Distributed_Systems/2021-07-19_13-12-33_screenshot.png]]
+
+ - The first two are forms, which include the name, version of the form, class
+   handle and then the instance variables
+ - Then write out a form of ==ch0== with fields "Tim" etc. These must match in
+   order
+ - == 2 oh1 oh3 == which is the ArrayList of size two with two objects
+
+*** Applications of Serialization
+ - 1) Sending an object structure over a network connection
+ - 2) Persisting an object graph to disk
+ - 3) Making a deep copy of an object graph in memory
+
+ #+DOWNLOADED: screenshot @ 2021-07-19 13:16:38
+ [[file:images/Distributed_Systems/2021-07-19_13-16-38_screenshot.png]]
+
+** CAP theorem
+ - The CAP theorem states that a distributed system cannot simultaneously be
+   consistent, available and tolerant against network partition failures
+
+ #+DOWNLOADED: screenshot @ 2021-07-19 13:28:21
+ [[file:images/CAP_theorem/2021-07-19_13-28-21_screenshot.png]]
+
+*** Partitioning
+ - Consistency: all parts of the system agree on a truth
+ - Available: Means that clients can access each other
+ - Partition failures: if some part of the network between the communicating
+   system goes down then the system will be able to function. To achieve this we
+   need some replication. If the network has a route go down it can go to a
+   replica and keep running in a correct way
+
+*** Availability
+ #+DOWNLOADED: screenshot @ 2021-07-19 18:13:43
+ [[file:images/CAP_theorem/2021-07-19_18-13-43_screenshot.png]]
+
+ - So for availability we are encouraged not to have a single point of
+   failure. Thus in the master/slave model if the master were to fail then the
+   slave would take over, but if the link between the service and the master were
+   to fail then the *whole system* would fail
+ - Instead (to correct this) we would like to use a *master/master* model which
+   means that they are all masters, this means that we have lots of alternative
+   pathways which increases availability
+   - The problem is that with more masters we need a way to keep them consistent
+
+*** Consistency
+ #+DOWNLOADED: screenshot @ 2021-07-19 18:17:07
+ [[file:images/CAP_theorem/2021-07-19_18-17-07_screenshot.png]]
+
+ - In the left we are just saying that if there is no replication then there is
+   no need to worry about consistency, but then your system if fragile in the
+   case that your database goes down
+ - On the right we are saying that the database should be consistent enough that
+   you are able to write to #1 and then read from #2 for the same value and then
+   that request should work
+   - This is generally not achievable without some sort of latency.
+ - In summary we need to be able to make a trade off between the three attributes
+   of CAP for our solution
+
+*** Active replication
+ - Active replication involves clients sending requests to all replicas
+ - Atomic multicast protocols and middleware are used to ensure order and
+   atomicity
+   - *Order:* Given invocations ==op(arg)== and ==op'(arg')== by clientA and
+     clientB,k if replicated servers i and j process the invocations they do so
+     in the same order
+   - *Atomicity:* Given invocation ==op(arg)== by clientA, if one server replica
+     processes the request then every non-crashed replica also processes the
+     request
+
+ #+DOWNLOADED: screenshot @ 2021-07-19 18:23:36
+ [[file:images/CAP_theorem/2021-07-19_18-23-36_screenshot.png]]
+
+ - This shows that the ordering is broken then the consistency fails. This is
+   solved by multicast and TCP with the drawback of latency (which is quite
+   large) and still doesn't 100% guarantee consistency because what if one of the
+   servers crashes? Then we would not be consistent with none of the other
+   servers but at no fault of the software, thus we need even more software in
+   order to get it consistent again
+
+*** Master / Master Replication
+ - In practice, Master / Master replication is used where temporary inconsistency
+   can be tolerated
+ - Replicas "gossip" synchronisation messages to achieve eventual consistency
+
+ #+DOWNLOADED: screenshot @ 2021-07-19 18:32:21
+ [[file:images/CAP_theorem/2021-07-19_18-32-21_screenshot.png]]
+
+ - This is less strict than active replication, we are sharing our state with a
+   gossip protocol
+
+*** DNS
+ - We are looking at this because it's a distributed system
+ - The DNS (Domain Name System) is the internets lookup service that maps domain
+   names to IP addresses
+ - Key non-functional requirements for the DNS include scalability and
+   availability
+   - To meet these requirements, DNS has been designed using replication,
+     partitioning and caching tactics
+
+**** Partitioning
+ - The names are partitioned over a hierarchy of servers each of which hold a
+   subset of mappings
+ - They each know about above on below mappings and how to get to them, if it's
+   something like auckland.ac.nz it would go the .nz, which goes the .ac which
+   would then fill the request
+
+ #+DOWNLOADED: screenshot @ 2021-07-19 19:09:39
+ [[file:images/CAP_theorem/2021-07-19_19-09-39_screenshot.png]]
+
+ - We need replication because if .com goes down then all the .com lookups would
+   fail which would be a huge disaster, with replication the calls to .com can be
+   routed
+
+**** Example lookup
+ #+DOWNLOADED: screenshot @ 2021-07-19 19:12:26
+ [[file:images/CAP_theorem/2021-07-19_19-12-26_screenshot.png]]
+
+ - There are 10 messages that need to be sent, but in reality this is very quick
+   and well optimized, this is also load balanced which helps with scalability
+
+**** Caching
+ - In practice, caching is critical to DNS' performance
+ - DNS servers cache the IP addresses of other DNS servers they discover when
+   processing queries
+ - Cached data may become stale - authoritative servers associate TTL (time to
+   live) values with name to address mappings
+
+ #+DOWNLOADED: screenshot @ 2021-07-19 19:14:37
+ [[file:images/CAP_theorem/2021-07-19_19-14-37_screenshot.png]]
+
+ - There is an obvious tradeoff between long TTL values and short TTL values. The
+   former aids in performance while the latter aids in consistency
+
+** Distributed File Sharing
+ - Peers store content
+ - Indexing servers do not store content, but mappings identifying which peers
+   store which files
+ - Distributed content is immutable and arbitrarily replicated
+ - Indexing servers replicate mappings: but don't guarantee consistency
+
+ #+DOWNLOADED: screenshot @ 2021-07-19 19:17:53
+ [[file:images/Distributed_File_Sharing/2021-07-19_19-17-53_screenshot.png]]
+* Lecture 2
+** Services-Oriented Architecture
+- Service-oriented architectures (SOA) are distributed systems made up of
+  software units (services). With SOA, consumers can discover and interact with
+  services, without regard for the technologies used to implement individual
+  services. SOA applications often cross organisational boundaries.
+- SOA can cross boundaries, meaning one part of the SOA can be in one part of
+  the company while another part can be in another part/different company (distributed)
+- *Service characteristics*
+  - Distributed
+  - Coarse-grained units of reuse (similar to classes, but typically do more
+    than a single class)
+  - Well-defined interfaces, hidden implementations. Publishes a contract which
+    defines how that service can be used
+  - Technology independent, one service can use other services without needing
+    to know about the technology that it's using
+  - Loosely coupled, they know about each other and can be swapped out or drop
+    in and out
+  - Discoverable, there should be some kind of mechanism in which a client can
+    go out and find all the services on that network
+  - Composable: you can compose multiple services
+- *Why use SOA?*
+  - Reduce IT costs: They are available for reuse so you don't have to remake
+    things
+  - Reduce time to market, because you can assemble existing services it means
+    that you are going to be quicker to market
+  - Agility
+  - Leverage legacy systems: If you have legacy code then you can get rid of it
+    by just rebuilding that part and using the shell of the old one
+
+** Interoperability in the presence of heterogeneity
+- Interoperability necessitates use of common communication protocol
+- HTTP is an Open and standardised protocol
+- HTTP is a text-based protocol
+  - The character content of HTTP messages can be encoded in a agreed way, eg:
+    UTF8
+  - Middleware converts UTF-8 encoded data to and from native formats
+- Web services use HTTP
+
+#+DOWNLOADED: screenshot @ 2021-07-26 18:07:01
+[[file:images/Lecture_2/2021-07-26_18-07-01_screenshot.png]]
+
+- So we are using HTTP to keep these services communicating
+
+*** HTTP
+- HTTP defines two messages
+  - Request
+#+DOWNLOADED: screenshot @ 2021-07-26 18:10:53
+[[file:images/Lecture_2/2021-07-26_18-10-53_screenshot.png]]
+
+  - Reply
+#+DOWNLOADED: screenshot @ 2021-07-26 18:10:59
+[[file:images/Lecture_2/2021-07-26_18-10-59_screenshot.png]]
+- URL syntax
+  - http://serverName:port/resoouce?query
+
+** Servlet containers
+- The servlet container specification provides a managed execution environment
+  for servlets
+  - A servlet is a Java component that extends the capabilities of a server
+  - A servlet has a lifecycle that is controlled by the container
+- Servlet containers route requests through to particular servlets
+  - Each incoming request is managed by a separate thread
+  - There is at most one isntance of any servlet class: servlets need to be
+    threadsafe
+- Servlet containers are an example of middleware
+
+#+DOWNLOADED: screenshot @ 2021-07-26 18:19:10
+[[file:images/Lecture_2/2021-07-26_18-19-10_screenshot.png]]
+
+** Servlet Lifecycle
+- The servlet container calls the lifecycle methods
+  - ==init()==
+    - Initialises a servlet instance
+  - ==service()==
+    - Called once per incoming request for the servlet
+    - Supplies request data and a connection to the client
+  - ==destroy()==
+    - Called when the servlet container is shutting down or where resources need
+      to be freed
+    - Typically implemented to save state to persistent storage
+
+#+DOWNLOADED: screenshot @ 2021-07-26 18:22:26
+[[file:images/Lecture_2/2021-07-26_18-22-26_screenshot.png]]
+
+#+DOWNLOADED: screenshot @ 2021-07-26 18:27:38
+[[file:images/Lecture_2/2021-07-26_18-27-38_screenshot.png]]
+
+- Overview of methods of servlet, you're going to be extending the HttpServlet
+  which provides additional methods which makes it easier (look at the red
+  boxes)
+
+** Basic Servlet
+#+DOWNLOADED: screenshot @ 2021-07-26 18:29:18
+[[file:images/Lecture_2/2021-07-26_18-29-18_screenshot.png]]
+
+- You're extending ==HttpServlet==
+- request object is everything from the client
+- resp object is the response that you're going to make
+- ==resp.setContentType== is the MIME type
+
+** Web Services
+- HTTP is useful in developing an RMI-like service-invocation mechanism that
+  isn't constrained to Java: but alone it's insufficient
+  - How do we represent service interfaces in a programming language neutral
+    way? (Not just java)
+  - How do we describe service invocations? parameters and output
+  - How do we deal with different datatype systems? ADT across systems, how do
+    we convert between two types from Bool and bool (c and haskell)
+- Remember that servlets it shouldn't matter what programming language it was
+  built in, but how do we represent types?
+  - One method: is SOAP over HTTP, you can also use JSON (covered using web services)
+  - To address the third concern we use schema datatypes (platform neutral)
+
+#+DOWNLOADED: screenshot @ 2021-07-26 18:48:18
+[[file:images/Lecture_2/2021-07-26_18-48-18_screenshot.png]]
+
+** Programming-language-neutral interfaces
+#+DOWNLOADED: screenshot @ 2021-07-26 18:55:30
+[[file:images/Lecture_2/2021-07-26_18-55-30_screenshot.png]]
+
+- WSDL (web services Description Language) is an XML dialect used to describe
+  Web service interfaces
+- A WSDL document includes several elements
+  - *PortType*
+    - A set of named operations (like an interface)
+    - Each operation is described by an input and output message
+  - Message
+    - Typed messages: define data to be sent in requests and responses
+  - Types
+    - Datatype definitions (not in the diagram above)
+  - Binding/Service
+    - Communication endpoints identifying the location of a service
+    - Tells prospective clients where what what endpoints are available in the
+      server
+
+** SOAP over HTTP
+
+#+DOWNLOADED: screenshot @ 2021-07-26 18:59:14
+[[file:images/Lecture_2/2021-07-26_18-59-14_screenshot.png]]
+
+** Soap Web Services
+#+DOWNLOADED: screenshot @ 2021-07-26 19:00:13
+[[file:images/Lecture_2/2021-07-26_19-00-13_screenshot.png]]
+- When the service is published the WSDL will be available to the network
+- You can make generated bindings to these WSDLs so that you don't have to write
+  them yourself
+- UDDI Registry is a register on the network which enumerates of WSDL
+  services. When the client is new to the network it can talk to the registry
+  and then browse a list of services that it might want to consume
+
+** REST Web Services
+- REST (REpresentational State Transfer) more fully leverages the capabilities
+  of the HTTP protocol, kinda a replacement for SOAP
+- In addition to being an open request/reply protocol, HTTP:
+  - Is a stateless protocol
+  - Defines methods for request messages and typed responses
+  - Supports negotiable content
+
+#+DOWNLOADED: screenshot @ 2021-07-26 19:41:02
+[[file:images/Lecture_2/2021-07-26_19-41-02_screenshot.png]]
+
+- These are some of the methods and responses that you will get from and HTTP
+  server, they are pretty self explanatory
+
+** Stateless protocol
+- As a stateless protocol, the server maintains no "session" state between
+  requests
+
+#+DOWNLOADED: screenshot @ 2021-07-26 20:45:35
+[[file:images/Lecture_2/2021-07-26_20-45-35_screenshot.png]]
+- It's often useful for a server to tracker which client it is processing
+  requests for. A cookie allows clients to store a session state and send this
+  with each request
+
+#+DOWNLOADED: screenshot @ 2021-07-26 20:46:50
+[[file:images/Lecture_2/2021-07-26_20-46-50_screenshot.png]]
+
+- So in order to do a shopping cart you're going to have to use a cookie with a
+  ==sessionToken== in order for the server to identify the client and thus what
+  shopping cart they should be shown
+- HTTP is stateless because it simplifies servers because they often don't need
+  it
+
+** Negotiable content
+
+#+DOWNLOADED: screenshot @ 2021-07-26 20:48:54
+[[file:images/Lecture_2/2021-07-26_20-48-54_screenshot.png]]
+
+- Using HTTP, clients can specify preferences for content. This is done using
+  the ==Accept==, the q values are the priority where 1 is the highest and 0 is
+  the lowest
+
+** REST (Representational State Transfer)
+- Fielding proposed a set of architectural principles known as REST
+  - Addressable resources
+  - A uniform, constrained interface
+  - Representation-oriented (html, text, audio, video) where the client and
+    server decide on this
+  - Communicate statelessly, makes scaling easier
+  - Hypermedia as the engine of application state, data formats in REST drive the
+    engine, the responses contain links to aggregate you to other resources (eg
+    page navigation)
+
+** REST Principles
+*** 1: Addressable Resources
+- Every resources is reachable through a unique identifier
+- REST uses URIs to identify resources
+
+#+DOWNLOADED: screenshot @ 2021-07-26 20:54:13
+[[file:images/Lecture_2/2021-07-26_20-54-13_screenshot.png]]
+
+- In this case the response was in JSON and included a link to the product
+  (entries array)
+
+*** 2: Uniform, Constrained Interface
+- Use the HTTP methods as intended, in implementing the service
+
+#+DOWNLOADED: screenshot @ 2021-07-26 20:56:10
+[[file:images/Lecture_2/2021-07-26_20-56-10_screenshot.png]]
+
+- Use of HTTP methods as intended can allow us to perform optimizations
+  - For example where GTE's semantics are respected, GET responses can be
+    cached, contributing to scalability
+
+#+DOWNLOADED: screenshot @ 2021-07-26 21:00:04
+[[file:images/Lecture_2/2021-07-26_21-00-04_screenshot.png]]
+
+*** Stateless Communication
+- The server can be stateful (customer orders), but the communication must be
+  stateless, where in order to identify clients the client must be send their
+  sessionid
+- Requests are made in isolation with no guarantee of ordering
+- The client keeps track of where they are in the request
+
+#+DOWNLOADED: screenshot @ 2021-07-26 21:02:41
+[[file:images/Lecture_2/2021-07-26_21-02-41_screenshot.png]]
+
+- We can fully replicate the service any number of times and because it's
+  stateless they will all respond the exact some way
+
+*** HATEOAS
+- Responses contain links telling the client "where they can go next"
+
+#+DOWNLOADED: screenshot @ 2021-07-26 21:04:15
+[[file:images/Lecture_2/2021-07-26_21-04-15_screenshot.png]]
+
+- Here the client requests products, the server returns the first five entries,
+  but also in the header it includes a next link for the client to request the
+  next 5 is they so need
+
+** SOAP vs REST
+*** SOAP
+- HTTP is used as nothing more than a transport protocol
+- SOAP is based on many standards, eg SOAP and GSDL, and requures associated
+  tools
+- SOAP services have formally defined contracts that specify service interfaces
+*** REST
+- HTTP and its features are leveraged; HTTP provides a service API
+- REST relies only on HTTP; there's no need for other standards and tools
+- REST is ad-hoc; service contracts are not well defined (REST interfaces don't
+  specify the type of data to be exchanged)
+  - REST is used way more in modern times. It's just better because HTTP is the
+    backbone of the internet so it gains all these optimizations
+
+** JAX-RS Specification
+- JAX-RS is an open specification for a framework that simplifies development of
+  RESTful Web services
+- Key features:
+  - Annotation based
+  - Parameter injection
+  - Message body marshallers/unmarshallers
+- We will use the RESTEasy implementation in this course
+
+#+DOWNLOADED: screenshot @ 2021-07-26 21:09:39
+[[file:images/Lecture_2/2021-07-26_21-09-39_screenshot.png]]
+
+
+** JAX-RS Programming Model
+- JAX-RS implementation provide a servlet class, ==HttpServletDispatcher==
+- This loads appilcation services and delegartes processing of HTTP messages to
+  them
+  - You no longer need to implement servlets, instead you supply application
+    services
+- The JAX-RS runtime performs pre and post processing on servie requests and
+  responses
+
+#+DOWNLOADED: screenshot @ 2021-07-26 21:16:08
+[[file:images/Lecture_2/2021-07-26_21-16-08_screenshot.png]]
+
+- We are basically just writing our servlets using the JAX-RS runtime because it
+  makes it way easier to write and handles a lot of the overhead
+- If you want to build a webservices suing JAX-RS:
+  - Create a Resources class iwth methods that process service requests
+  - Create a subclass of Application
+    - Override method getSingletons() to return a set containtin an instance of
+      the Resource class
+  - On startup, JAX-RS finds Application subclasses, instantiates them and calls
+    their getSingletons() methods
+- JAX-RS routes all requests directed at the application service to the
+  registered Resource object
+
+** Parameter Injection
+
+#+DOWNLOADED: screenshot @ 2021-07-27 19:22:01
+[[file:images/Lecture_2/2021-07-27_19-22-01_screenshot.png]]
+
+- These are the params annotations that we can use
+  - PathParam: This is used as a path param, eg ==thing/{id}==
+
+** Automatic Type Conversion
+- Since HTTP is a text-based protocol, all parts of HTTP requests (other than
+  the body) are represented as Strings
+- The JAX-RS run-time automatically converts Strings to data types
+
+#+DOWNLOADED: screenshot @ 2021-07-27 19:25:30
+[[file:images/Lecture_2/2021-07-27_19-25-30_screenshot.png]]
+
+** Default Request Processing and Error Handling
+- Success cases
+  - Resources method with a void type results in a 204 'No content' response
+  - Resource method with a non-void return type results in either a 200 'Ok'
+    response for a non-null response, and a 204 'No Content' response otherwise
+- Error cases
+  - If a client invokes on a mispelt URI, 404
+  - If a client attempts to invoke a HTTP method that's not associated with the
+    given URI, 405 'No method' is returned
+  - If a client requests a content types that's not supported, 406 'Not
+    Acceptable' is returned
+
+** Complex Responses
+
+#+DOWNLOADED: screenshot @ 2021-07-27 19:31:16
+[[file:images/Lecture_2/2021-07-27_19-31-16_screenshot.png]]
+
+- We can use a response builder to help build our responses to the client,
+  there's no constructor so we actually use one of those ReponseBuilder
+  
+** Exception Handling
+
+#+DOWNLOADED: screenshot @ 2021-07-27 19:34:09
+[[file:images/Lecture_2/2021-07-27_19-34-09_screenshot.png]]
+
+- Flowchart for exceptions within JAX-RS
+  
+
+#+DOWNLOADED: screenshot @ 2021-07-27 19:34:53
+[[file:images/Lecture_2/2021-07-27_19-34-53_screenshot.png]]
+
+- A potential runtime for a an exception
+
+** JAX-RS Client
+*** PUT and POST
+
+#+DOWNLOADED: screenshot @ 2021-07-27 19:37:43
+[[file:images/Lecture_2/2021-07-27_19-37-43_screenshot.png]]
+
+*** Client Exception Handling
+
+#+DOWNLOADED: screenshot @ 2021-07-27 19:38:50
+[[file:images/Lecture_2/2021-07-27_19-38-50_screenshot.png]]
+* Tutorial 1
+** Question 1: Given these characteristics, what are three possible outcomes when trying to send a message from one host to another?
+- While the two computers have set up a session the link fails
+  - Either the connection times out
+  - Or the links in between the clients reroute the traffic after detecting that
+    the route it broken
+- Data can be corrupted during transmission, either due to packet loss or
+  flipped bits
+  - The client can either reconstruct the message if a redundancy scheme is used
+    like CRC
+  - Or can ask the client to resend the message (or part of the message)
+- A host can fail
+  - In that case the connection is killed/timed out
+- The packet arrives fine
+- Could arrive out of order
+- Packets could be dropped
+** Question 2: Consider the following ideas where appropriate: Logs, times, Acknowledgements packets, Sequence numbers, Checksums, Buffers
+- Logs: Logging when you have sent a message
+- Timers: When a client sends a message the client starts a timer to see if the
+  packet has been dropped on the network, it it times out then you would resend
+  the message
+- Acknowledgement packet: Client receives a message and sends an ACK to let the
+  sender know that they have received it
+- Sequence numbers: Packet ordering
+- Checksums: Packet integrity
+- Buffers
+- When the network is buff you buffer a message to be sent. The rate that you're
+  receiving messages is typically higher than the rate that you're sending them
+  so you need buffer space
+** Question 3: Java Serialization
+*** What are the three Java classes/interfaces required to support serialization and how are they used?
+- =Serializable= (marker interface)
+- =ObjectOutputStream=
+- =ObjectInputStream=
+*** What is one advantage and one disadvantage of using Java serializatoin as a data interchange format? 
+- Difficult to tell what type of data you have, you must do a cast
+- Easy to implement, just have to implement a single interface without even
+  having to manually write any code
+- Version of the class matters (client and server needs the same)
+- Both ends of the channel need to be java based. It's not an interchange
+  format-
+** Question 4
+*** What role does a servlet container play in a java-based distributed system using HTTP as a communication protocol?
+- It receives HTTP requests and parses the path and input, creates the servlet
+  and runs the required things and returns the output. It's doing all of the
+  heavy lifting that the client doesn't have to do. Acts as a server
+- Manages the servlet lifecycle, lets you host your servlet
+- A servlet is a server that's able to recieve and send HTTP requests and
+  responses, while the servlet manager routes the requests and responses
+*** When entering a URL into a web browser, what kind of HTTP request will be sent to the server?
+- GET request
+** Question 5
+*** a) What is the role of WSDL in a SOAP based web service?
+ - Describes what a SOAP service does, the types that it accepts and the types
+   that it needs and how to convert types
+ - It is a XMl based language 
+*** b) In REST, which four HTTP methods correspond to the RUD operations Create, REtrieve, Update & Delete
+- Create: POST
+- Retrieve: GET
+- Update: PUT
+- Delete: DELETE
+*** c)  What are the five REST principles? Describe each one briefly 
+  - Addressable resources; Any resources in a REST based system can be addressed
+    by a URI
+  - Uniform constraint interface: REST relies on the HTTP interface itself, it
+    uses them as intended by the HTTP protocol
+  - Representation orientation: Client and service can AGREE on a (or several
+    types of 
+  - HATEOS: Might include links to other content
+*** d) Compare sockets vs SOAP vs REST for creating distributed application. For each one, give one example where that technology might be preferred over the alternatives
+- using only TCP/UDP is lightweight, speed. If CPU is at a premium like most
+  integrated systems ore
+- SOAP has a nice interface for discovering and consuming unknown services
+- REST: Uses HTTP as it's meant to be used, so it's able to get all the benefits
+  of the optimisations of HTTP
