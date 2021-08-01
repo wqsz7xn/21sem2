@@ -593,6 +593,234 @@
 
 #+DOWNLOADED: screenshot @ 2021-07-27 19:38:50
 [[file:images/Lecture_2/2021-07-27_19-38-50_screenshot.png]]
+* Lecture 3
+** MessageBodyReader / MessageBodyWriter
+- JAX-RS contains two interfaces:
+  - MessageBodyReader: Handles *unmarshalling* of an HTTP message body in some
+    format to Java objects
+  - MessageBodyWriter: Handles *marshalling* of Java objects to an HTTP message
+    body in some format
+- Typically written in pairs, often with one class implementing both interfaces
+- Custom readers/writers can be implemented and registered with JAX-RS in the
+  Application class
+- Appropriate readers/ writers are chosen at runtime based on MIME types
+  - Specified using @Produces / @Consumes annotations within your Resource
+    classes and your reader/writer classes
+
+
+#+DOWNLOADED: screenshot @ 2021-08-01 15:19:52
+[[file:images/Tutorial_1/2021-08-01_15-19-52_screenshot.png]]
+
+- Converts the messages to/from java objects
+- Consumes/Produces means it can serialize/deserialize objects of this type
+
+*** From the JAX-RS Client
+- Use the =register()= method of ClientBuilder to register your custom
+  readers/writers
+
+#+DOWNLOADED: screenshot @ 2021-08-01 15:31:34
+[[file:images/Tutorial_1/2021-08-01_15-31-34_screenshot.png]]
+
+- Use the =accept()= method to state your allowed response types
+
+#+DOWNLOADED: screenshot @ 2021-08-01 15:31:54
+[[file:images/Tutorial_1/2021-08-01_15-31-54_screenshot.png]]
+
+- Use the =Entity.entity()= method to specify a custom MIME type for your
+  request
+
+#+DOWNLOADED: screenshot @ 2021-08-01 15:32:20
+[[file:images/Tutorial_1/2021-08-01_15-32-20_screenshot.png]]
+
+** JSON representation
+
+#+DOWNLOADED: screenshot @ 2021-08-01 15:33:37
+[[file:images/Tutorial_1/2021-08-01_15-33-37_screenshot.png]]
+
+- fairly simple, just including this so that i can search
+
+** Jackson
+- Jackson is a specification for working with JSON
+- Jackson enables developers to work with domain objects (basically just java objects)
+  - Jackson handles the conversion of objects to/from JSON
+- JAX-RS integrates with Jackson
+
+#+DOWNLOADED: screenshot @ 2021-08-01 15:35:26
+[[file:images/Tutorial_1/2021-08-01_15-35-26_screenshot.png]]
+
+- Jackson can basically act as the marshaller/unmarshaller
+
+*** Simple example
+- Jackson advocates "configuration by exception"
+  - Certain behaviour is provided by default; use annotations to override these
+    defaults
+- By default, Jackson expects classes to conform to JavaBean conventions
+  - Each /property of a bean will be marshalled/unmarshalled
+  - A JavaBean property refers to a getter/setter method pair (eg: the =Book=
+    class has a single property called title
+  - JavaBeans must have default (no-argument) constructor, which will be used to
+    create instances during the unmarshalling process
+
+#+DOWNLOADED: screenshot @ 2021-08-01 15:39:01
+[[file:images/Tutorial_1/2021-08-01_15-39-01_screenshot.png]]
+
+- Highlighted is the getter/setter pair that the Jackson stuff will use
+  
+
+#+DOWNLOADED: screenshot @ 2021-08-01 15:39:59
+[[file:images/Tutorial_1/2021-08-01_15-39-59_screenshot.png]]
+
+- As you can see Jackson is fairly simple to use to serialize/deserialize
+
+*** Ignoring and Changing properties
+- If you have stupid property names or just ignoring some field of your class
+  you may want to ignore them in your JSON serialization
+
+#+DOWNLOADED: screenshot @ 2021-08-01 15:41:42
+[[file:images/Tutorial_1/2021-08-01_15-41-42_screenshot.png]]
+
+- =JSONIgnore= 
+
+*** Lists and Arrays
+- Lists and arrays both marshal to JSON arrays
+- When unmarshalling JSON arrays
+  - If the bean property is a Java array, the JSON array will be unmarhsalled to
+    a Java array
+  - If the bean property is a List, the JSON array will be unmarhsalled to an
+    ArrayList (regardless of the original list type before serialization! (ie,
+    this information is lost when you serialize about the array type)
+
+#+DOWNLOADED: screenshot @ 2021-08-01 15:43:30
+[[file:images/Tutorial_1/2021-08-01_15-43-30_screenshot.png]]
+
+- You see it goes from a list to an ArrayList, this may not be what you want but
+  it's something that you have to look out for
+
+*** Maps
+- Maps are marshalled to JSON objects
+  - Each map key is marshalled to a property name equalling the value of the
+    key's =toString= method
+- When unmarshalling a JSON object into a Map
+  - The type of Map created is a LinkedHashMap
+  - JSON object properties are unmarhsalled to String keys
+
+#+DOWNLOADED: screenshot @ 2021-08-01 15:47:05
+[[file:images/Tutorial_1/2021-08-01_15-47-05_screenshot.png]]
+
+*** Custom Marshalling / Unmarshalling
+- Java classes which aren't JavaBeans may not be handled appropriately by
+  Jackson
+  - One example includes the classes commonly used to represent dates and time
+    (LocalDate/LocalTime)
+- We can define implementations of =StdSerializer= and =StdDeserializer=, and
+  have Jackson use them where necessary via the =@JsonSerialize= and
+  =@JsonDeserialize= annotations
+
+#+DOWNLOADED: screenshot @ 2021-08-01 15:50:18
+[[file:images/Tutorial_1/2021-08-01_15-50-18_screenshot.png]]
+
+- Example of getReleaseDate, you serialize and deserialize using the
+  LocalDate{Serializer,Deserializer}.class (es) which are shown below
+
+#+DOWNLOADED: screenshot @ 2021-08-01 15:56:43
+[[file:images/Tutorial_1/2021-08-01_15-56-43_screenshot.png]]
+
+- Here we are overriding this serialize method so that it will properly parse it
+  to JSON
+
+**** Map Keys
+- Map keys are marshalled to JSON Strings by calling their toString() methods
+- to unmarshall a key back to anything other than a String, we must:
+  - Implement a KeyDeserializer responsible for converting Strings to other
+    object types,
+  - Instruct Jackson to use it with the =@JsonDeserialize attribute=
+
+#+DOWNLOADED: screenshot @ 2021-08-01 16:08:50
+[[file:images/Tutorial_1/2021-08-01_16-08-50_screenshot.png]]
+
+*** Object References
+**** Scenario 1
+- Scenario: Suppose we marshall an object graph containing multiple references
+  to the same object. What will happen?
+  - Going in we have two references to two different bob objects, but when we
+    deserialize we would have a reference to the same object
+
+#+DOWNLOADED: screenshot @ 2021-08-01 16:12:09
+[[file:images/Tutorial_1/2021-08-01_16-12-09_screenshot.png]]
+
+- The one of the left is the one that we want, but the one on the right is bad
+  (same reference)
+
+**** Scenario 2
+- Suppose we marshall an object graph containing cyclic references. What will
+  happen?
+  - Alice and Bob both have the same boss, the boss has boss of Alice and Bob,
+    et al.
+    - Cyclic dependency. You can't serialize this
+
+#+DOWNLOADED: screenshot @ 2021-08-01 16:17:06
+[[file:images/Tutorial_1/2021-08-01_16-17-06_screenshot.png]]
+
+- Throws stackoverflow exception
+
+**** Solutions
+- Solution: We can use the =@JsonIdentityInfo to specify an id property which
+  will be unique in a given object graph
+  - When an object is first marhsalled, it's complete state is written out
+  - If the same object is marshalled again, only its id is written out
+- Jackson can use these ids to reconstitute the exact object graph when
+  unmarshalling
+
+#+DOWNLOADED: screenshot @ 2021-08-01 16:19:09
+[[file:images/Tutorial_1/2021-08-01_16-19-09_screenshot.png]]
+
+- Property=id is how to uniquely identify, then they are different when
+  serialized, but it's the same object
+- When serializing manager, it will use the same id which is correct
+
+*** Polymorphism
+- Consider the following code
+
+#+DOWNLOADED: screenshot @ 2021-08-01 16:23:10
+[[file:images/Tutorial_1/2021-08-01_16-23-10_screenshot.png]]
+
+- You're losing your type data in the JSON structure so you don't know how to deserialize
+  - So to fix you need to include some sort of type information
+
+**** Solution
+- We can ensure that the /type/ information is marshalled along with the object
+  data itself
+  - This information can then be used to select the correct class during the
+    unmarshalling process
+- Two approaches
+  - Supply the Java class names using the =@JsonTypeInfo=
+  - Supply our own type names using =@JsonTypeInfo= and =@JsonSubTypes=
+
+
+#+DOWNLOADED: screenshot @ 2021-08-01 16:26:14
+[[file:images/Tutorial_1/2021-08-01_16-26-14_screenshot.png]]
+
+- Left is approach one and right is the second
+- Left provides easier to serialize but ugly JSON (not human readable)
+- Right provides slightly messier code but cleaner JSON
+
+** JAX-RS Integration: Server
+- Include =resteasy-jackson2-provider= as a dependency to enable Jackson and
+  integration with JAX-RS
+  - Explicitly adding the Jackson MessageBody Reader and MessageBodyWriteer
+    classes is neither required on the client nor the server
+  - Use @Produces / @Consumes annotations with the =application/json= MIME type
+
+#+DOWNLOADED: screenshot @ 2021-08-01 16:30:12
+[[file:images/Lecture_3/2021-08-01_16-30-12_screenshot.png]]
+
+** JAX-RS Integration: Client
+
+#+DOWNLOADED: screenshot @ 2021-08-01 16:31:47
+[[file:images/Lecture_3/2021-08-01_16-31-47_screenshot.png]]
+
+- Exactly then same as server, but use the same dependency version
+
 * Tutorial 1
 ** Question 1: Given these characteristics, what are three possible outcomes when trying to send a message from one host to another?
 - While the two computers have set up a session the link fails
