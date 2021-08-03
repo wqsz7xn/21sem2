@@ -1,6 +1,14 @@
 * 306 :306:
 ** TODO Start group project and go to next meeting 
    DEADLINE: <2021-07-28 Wed>
+** TODO Multiple parents task
+** Multiple Children
+** Multiple Parents
+** Find out if we want to use functional return types Maybe/Either
+*** if they do change startTime and duration to use these types
+**** another option is use integer which is nullable
+** Edge should have parent and child
+** Change the names to edge and node/vertex
 * 325
 ** TODO Watch the new lecture recordings and do the lab
    DEADLINE: <2021-08-01 Sun>

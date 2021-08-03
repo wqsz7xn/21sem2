@@ -638,6 +638,7 @@ processors do this 4 times faster (holy grail case)
 - Isoefficiency and cost-optimality
 - What is the best w can do in terms of isoefficiency?
 
+* Lecture 6
 ** Parallel Programming Models
 - 1. Message Passing Interface Model (MPI)
   - Older cousin: Parallel Virtual Machine (PVM)
@@ -677,7 +678,166 @@ processors do this 4 times faster (holy grail case)
   - Concurrency is specified in terms of high-level compiler directives
     - High-level constructs that leave some of the error-pron details to the
       compiler
-    - OpenMP has emerged as a standard
+  - OpenMP has emerged as a standard
+
+** POXIS API/Pthreads
+- Has emerged as the de-facto standard supported by most OS vendors
+  - Aids in the portability of threaded applications
+- Provides a good set of functions that allow for the creation, termination and
+  synchronization of threads
+  - However, these functions are low-level and the API is missing some
+    high-level constructs for efficient data sharing
+    - There are no collective communication operations like those provided by
+      MPI
+      - This excludes thinking about mutexes
+
+** Pthreads Overview
+- Thead creation and termination
+- Synchronization primitives
+  - Mutex
+  - Conditional variables
+- Object attributes
+
+*** Thread Creation and Termination
+
+#+DOWNLOADED: screenshot @ 2021-08-02 15:13:45
+[[file:images/Lecture_6/2021-08-02_15-13-45_screenshot.png]]
+
+*** Example: Computing the Value of PI
+
+#+DOWNLOADED: screenshot @ 2021-08-02 15:14:09
+[[file:images/Lecture_6/2021-08-02_15-14-09_screenshot.png]]
+- Randomly throw a dart, tally up. This is an approximation to pi. Each
+  processor con be throwing darts 
+
+** Synchronization Primitives
+- Access to shared variable need to be controlled to remove race conditions and
+  ensure serial semantics
+
+#+DOWNLOADED: screenshot @ 2021-08-02 15:15:14
+[[file:images/Lecture_6/2021-08-02_15-15-14_screenshot.png]]
+
+** Mutual Exlucsion Locks (Mutex)
+- Pthreads provide a special variable called a /mutex/ lock that can be used to
+  guard critical sections of the program
+  - The idea is for a thread to acquire the lock before entering the critical
+    section and release on exit
+  - If the lock is already owned by another thread, the thread blocks until the
+    lock is released
+- Lock represent serialization points, so too many locks can decrease the
+  performance
+
+#+DOWNLOADED: screenshot @ 2021-08-02 15:16:45
+[[file:images/Lecture_6/2021-08-02_15-16-45_screenshot.png]]
+
+*** Example: Computing the minimum element of an array
+
+#+DOWNLOADED: screenshot @ 2021-08-02 15:17:06
+[[file:images/Lecture_6/2021-08-02_15-17-06_screenshot.png]]
+
+*** Producer Consumer Queues
+
+#+DOWNLOADED: screenshot @ 2021-08-02 15:17:22
+[[file:images/Lecture_6/2021-08-02_15-17-22_screenshot.png]]
+
+#+DOWNLOADED: screenshot @ 2021-08-02 15:17:35
+[[file:images/Lecture_6/2021-08-02_15-17-35_screenshot.png]]
+
+** OpenMP (Open Multi-Processing)
+- A standard directive-based (you just direct it) shared memory programming API
+- API consists of a set of compiler directive along with a set of API functions
+
+#+DOWNLOADED: screenshot @ 2021-08-02 15:18:46
+[[file:images/Lecture_6/2021-08-02_15-18-46_screenshot.png]]
+
+- Series of pragmas (preprocessor) directives 
+  
+** Parallel Region
+- Parallel regions are specified by the parallel directive
+
+#+DOWNLOADED: screenshot @ 2021-08-02 15:19:44
+[[file:images/Lecture_6/2021-08-02_15-19-44_screenshot.png]]
+- Means try to parallelize this bit
+- The clause list contains information about
+  - conditional parallelization
+    - =if(scalar expression)=
+  - degree of concurrency
+    - =num_thread (integer expression)=
+  - Data handling:
+      #+DOWNLOADED: screenshot @ 2021-08-02 15:21:16
+      [[file:images/Lecture_6/2021-08-02_15-21-16_screenshot.png]]
+- Your number of threads should be less than the number of cores (untles syou
+  have hyperthreading then it's 2x the number of cores)
+  - But i think you don't have to think about this, the compiler will autodetect
+
+*** Example: Hello World
+
+#+DOWNLOADED: screenshot @ 2021-08-02 15:25:04
+[[file:images/Lecture_6/2021-08-02_15-25-04_screenshot.png]]
+- Automarker only has one or two cores, but it wont actualy run the thing, it's
+  just checking syntax
+- the barrier directive
+  - Synchronizes all threads in a team; all threads pause at the barrier, until
+    all threads execute the barrier
+
+- In reality this will happen (synchronization stuff
+
+#+DOWNLOADED: screenshot @ 2021-08-02 15:28:30
+[[file:images/Lecture_6/2021-08-02_15-28-30_screenshot.png]]
+
+#+DOWNLOADED: screenshot @ 2021-08-02 15:29:20
+[[file:images/Lecture_6/2021-08-02_15-29-20_screenshot.png]]
+
+- Designates one of the thread as the master thread and then that will execute
+  the next block
+** Concrete Example
+
+#+DOWNLOADED: screenshot @ 2021-08-02 15:30:43
+[[file:images/Lecture_6/2021-08-02_15-30-43_screenshot.png]]
+
+#+DOWNLOADED: screenshot @ 2021-08-02 15:30:53
+[[file:images/Lecture_6/2021-08-02_15-30-53_screenshot.png]]
+- If it has a larger girth then it's better for a gossip message (fewer
+  collisions?)
+  - *Girth*: Is the length of a shortest cycle contained in the graph
+- This is some version of BFS, look up BFS again and figure out how it works
+
+*** To Parallelize this
+- To convert our sequential algorithm to a parallel algorithm
+  - Add directive to parallelize the outer for loop
+
+#+DOWNLOADED: screenshot @ 2021-08-02 15:39:11
+[[file:images/Lecture_6/2021-08-02_15-39-11_screenshot.png]]
+- Guard against multiple conflicting writes
+
+#+DOWNLOADED: screenshot @ 2021-08-02 15:39:29
+[[file:images/Lecture_6/2021-08-02_15-39-29_screenshot.png]]
+- This means that it has to get a lock to run this
+- You don't need to run this critical section every time that's why the
+  critical section is inside the if block
+
+*** Mutex locks
+
+#+DOWNLOADED: screenshot @ 2021-08-02 15:42:48
+[[file:images/Lecture_6/2021-08-02_15-42-48_screenshot.png]]
+
+- You could just use locks instead to indicate a critical routine
+
+** Sequential vs Parallel Benchmarks
+
+#+DOWNLOADED: screenshot @ 2021-08-02 15:43:27
+[[file:images/Lecture_6/2021-08-02_15-43-27_screenshot.png]]
+
+- Multiple orders of magnitude faster in parallel (run using 16 threads) (16x
+  speedup)
+- assignments probably run on 48core
+- omp has a nice walltime functionality
+
+** Reduction clause
+
+#+DOWNLOADED: screenshot @ 2021-08-02 15:44:57
+[[file:images/Lecture_6/2021-08-02_15-44-57_screenshot.png]]
+
 * Misc
 - OpenMP second assignment
 ** SIMD
