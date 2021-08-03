@@ -1,6 +1,7 @@
 * 306 :306:
-** TODO Start group project and go to next meeting 
+** DONE Start group project and go to next meeting 
    DEADLINE: <2021-07-28 Wed>
+<<<<<<< HEAD
 ** TODO Multiple parents task
 ** Multiple Children
 ** Multiple Parents
@@ -9,14 +10,21 @@
 **** another option is use integer which is nullable
 ** Edge should have parent and child
 ** Change the names to edge and node/vertex
+=======
+** Do your parser on the side (not important)
+** TODO Implement the GraphStream stuff that you have been assigned
+   DEADLINE: <2021-08-08 Sun>
+** TODO Perhaps look at the 2020 second place (it's a mess)
+   DEADLINE: <2021-08-08 Sun>
+>>>>>>> dc535b0bd853f3c56f1d6a98c8bfcc44fca07839
 * 325
 ** TODO Watch the new lecture recordings and do the lab
    DEADLINE: <2021-08-01 Sun>
 * 711
-** Assignment 1
-   DEADLINE: <2021-08-07 Sat>
+** TODO Assignment 1
+   DEADLINE: <2021-08-18 Wed>
 * Misc
 ** DONE Pub quiz
    DEADLINE: <2021-07-28 Wed>
-** TODO Auckland Youth Choir performance
+** DONE Auckland Youth Choir performance
    DEADLINE: <2021-07-31 Sat>

@@ -837,6 +837,7 @@ processors do this 4 times faster (holy grail case)
 
 #+DOWNLOADED: screenshot @ 2021-08-02 15:44:57
 [[file:images/Lecture_6/2021-08-02_15-44-57_screenshot.png]]
+    - OpenMP has emerged as a standard
 
 * Misc
 - OpenMP second assignment
@@ -920,3 +921,11 @@ two nodes
 When you split the network into two, how many links are you breaking? The
 bisection should be done in such a way that the number of links broken is
 minimised
+** Assignment Concepts
+*** Bitonic sequences
+- a bitonic sequence is a sequence of elements  <a_0, a_1, ..., a_n-1> with the
+  property that either:
+- 1) there exists an index i, 0 <= i <= n-1, such that <a_0, ..., a_i> is
+  monotonically increases and <a_i+1, ..., a_n-1> is monotonically decreasing,
+  or
+- 2) there exists a cyclic shift of indices so that (1) is satisfied
