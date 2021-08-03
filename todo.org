@@ -6,12 +6,19 @@
    DEADLINE: <2021-08-08 Sun>
 ** TODO Perhaps look at the 2020 second place (it's a mess)
    DEADLINE: <2021-08-08 Sun>
-* 325
+** TODO Physically print the handout
+   DEADLINE: <2021-08-02 Mon>
+** Agenda topics
+*** Ask the algorithm people if they have any needs for the data structures that they are using
+* 325 :325:
 ** TODO Watch the new lecture recordings and do the lab
    DEADLINE: <2021-08-01 Sun>
-* 711
+* 711 :711:
 ** TODO Assignment 1
    DEADLINE: <2021-08-18 Wed>
+** TODO Physically print the handout
+   DEADLINE: <2021-08-02 Mon>
+** Ask how rigorous our proof have to be
 * Misc
 ** DONE Pub quiz
    DEADLINE: <2021-07-28 Wed>
