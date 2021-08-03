@@ -837,7 +837,85 @@ processors do this 4 times faster (holy grail case)
 
 #+DOWNLOADED: screenshot @ 2021-08-02 15:44:57
 [[file:images/Lecture_6/2021-08-02_15-44-57_screenshot.png]]
-    - OpenMP has emerged as a standard
+
+- OpenMP has emerged as a standard
+- the reduction clause specifies how multiple local copies of a variable at
+  different threads are combined into a single copy at the master when threads
+  exit
+
+*** Example: Computing the value of pi
+
+#+DOWNLOADED: screenshot @ 2021-08-04 09:37:15
+[[file:images/Lecture_6/2021-08-04_09-37-15_screenshot.png]]
+
+- As you can see, it's like a catamorphism (the reduction clause). It takes the
+  value from each thread and adds it
+
+** Specifying concurrency
+- Concurrent tasks are specified using the =for= and =sections= directives
+  - The =for= directive splits the iterations of a loop across the different
+    threads
+  - The =sections= directive assigns each thread to explicitly identified tasks
+
+*** The =for= directive
+
+#+DOWNLOADED: screenshot @ 2021-08-04 09:39:33
+[[file:images/Lecture_6/2021-08-04_09-39-33_screenshot.png]]
+
+*** Example
+
+#+DOWNLOADED: screenshot @ 2021-08-04 09:39:45
+[[file:images/Lecture_6/2021-08-04_09-39-45_screenshot.png]]
+
+** More one for directive
+- Loop scheduling scheme
+  - =schedule(static[, chunk-size])=
+    - splits the iterations into consecutive chunks of size chunk-size and
+      assigns them in round-robin fashion
+  - =schedule(dynamic [, chunk-size])=
+    - splits the iterations into consecutive chunks of size chunk-size and gives
+      to each thread a chunk as soon as it finished processing its previous
+      chunk
+  - =schedule(guided [, chunk-size])=
+    - like dynamic but the chunk-size is reduced exponentially as each chunk is
+      dispatched to a thread
+  - =schedule(runtime)=
+    - is determined by reading an environmental variable, basically you're doing
+      this manually
+
+** Restrictions on the =for= directive
+- For loops must not have break statements
+- Loop control variables must be integers
+- The initialization expression of the control variable must be an integer
+- The logical expression must be4 one of <, <=, >, >=
+- The increment expression must have integer increments and decrements
+
+** The =sections= directive
+
+#+DOWNLOADED: screenshot @ 2021-08-04 09:44:05
+[[file:images/Lecture_6/2021-08-04_09-44-05_screenshot.png]]
+
+** Synchronization Directives
+- barrier directive
+
+#+DOWNLOADED: screenshot @ 2021-08-04 09:44:38
+[[file:images/Lecture_6/2021-08-04_09-44-38_screenshot.png]]
+
+- single/master directives
+
+#+DOWNLOADED: screenshot @ 2021-08-04 09:44:52
+[[file:images/Lecture_6/2021-08-04_09-44-52_screenshot.png]]
+
+- critical/atomic directives
+
+#+DOWNLOADED: screenshot @ 2021-08-04 09:45:06
+[[file:images/Lecture_6/2021-08-04_09-45-06_screenshot.png]]
+
+- ordered directive
+
+#+DOWNLOADED: screenshot @ 2021-08-04 09:45:15
+[[file:images/Lecture_6/2021-08-04_09-45-15_screenshot.png]]
+
 
 * Misc
 - OpenMP second assignment
