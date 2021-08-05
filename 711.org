@@ -916,7 +916,139 @@ processors do this 4 times faster (holy grail case)
 #+DOWNLOADED: screenshot @ 2021-08-04 09:45:15
 [[file:images/Lecture_6/2021-08-04_09-45-15_screenshot.png]]
 
+* Lecture 7
+** Parallel Sorting Examples
+*** Background
+- Input specification
+  - Each processor has n/p elements
+  - An ordering of the processors
+- Output Specification
+  - Each processor will get n/p consecutive elements of the final sorted array
+  - The chunk is determined by the processor ordering
+- Variations
+  - Unequal number of elements on output
+    - In general, this is not a good idea and it may require a shift to obtain
+      the equal size distribution
 
+** Basic Operation: Compare-Split Operation
+
+#+DOWNLOADED: screenshot @ 2021-08-04 16:07:16
+[[file:images/Lecture_7/2021-08-04_16-07-16_screenshot.png]]
+
+** Sorting Networks
+- Sorting is one of the fundamental problems in Computer Science
+- For a long time researches have focused on the problem of "how fast can we
+  sort /n/ elements"?
+  - Serial
+    - =nlong(n)= lower-bound for comparision-based sorting
+  - Parallel
+    - O(1), O(long(n)), O(???)
+  - Sorting networks
+    - Custom-made hardware for sorting
+      - Hardware & algorithm
+      - Mostly of theortical interest but fun to study
+
+** Elements of Sorting Networks
+- Key Idea:
+  - Perform many comparisons in parallel
+- Key Elements
+  - Comparators:
+    - Consist of two input, two output wires
+    - Take two elements on the input wires and outputs them in sorted order in
+      the output wires
+  - Network architecture:
+    - The arrangement of the comparators into interconnected comparator columns
+      - Similar to multi-stage networks
+- Many sorting networks have been developed
+  - Bitonic sorting network
+  - =O(log^2(n)) columns of comparators
+
+#+DOWNLOADED: screenshot @ 2021-08-04 16:19:59
+[[file:images/Lecture_7/2021-08-04_16-19-59_screenshot.png]]
+
+- Two way comparator
+- Combine multiple of these to extend their functionality
+- Parallel running time will be bounded by the number of gates, the complexity
+  is the longest bottleneck path
+
+
+** Bitonic Sequence
+
+#+DOWNLOADED: screenshot @ 2021-08-04 16:11:46
+[[file:images/Lecture_7/2021-08-04_16-11-46_screenshot.png]]
+
+*** Why Bitonic Sequences
+- A bitonic sequence can "easily" be sorted in increasing/decreasing order
+
+#+DOWNLOADED: screenshot @ 2021-08-04 16:24:34
+[[file:images/Lecture_7/2021-08-04_16-24-34_screenshot.png]]
+
+- Every element of S_1 will <= to every element of S_2
+- Bot S_1 and S_2 are bitonic sequences
+- So how can a bitonic sequence be sorted?
+
+**** Example
+
+#+DOWNLOADED: screenshot @ 2021-08-04 16:25:23
+[[file:images/Lecture_7/2021-08-04_16-25-23_screenshot.png]]
+
+*** Bitonic Merging Network
+- A comparator network that takes as input a bitonic sequence and performs a
+  sequence of bitonic splits to sort it
+  - +BM[n]
+    - A bitonic merging netowkr for sorting in increasing order an /n/ element
+      bitonic sequence
+  - -BM[n]
+    - A similar sort in decreasing order
+
+#+DOWNLOADED: screenshot @ 2021-08-04 16:27:35
+[[file:images/Lecture_7/2021-08-04_16-27-35_screenshot.png]]
+
+*** Are we done?
+- Given a set of elements, how do we re-arrange them into a bitonic sequence?
+- Key Idea:
+  - Use successively larger bitonic networks to transform the set into a bitonic
+    sequence
+
+#+DOWNLOADED: screenshot @ 2021-08-04 16:28:29
+[[file:images/Lecture_7/2021-08-04_16-28-29_screenshot.png]]
+
+**** An Example
+
+#+DOWNLOADED: screenshot @ 2021-08-04 16:28:49
+[[file:images/Lecture_7/2021-08-04_16-28-49_screenshot.png]]
+
+*** Complexity
+- How many columns of comparators are required to sort n=2^I elements
+  - ie: depth d(n) of the network
+
+#+DOWNLOADED: screenshot @ 2021-08-04 16:29:50
+[[file:images/Lecture_7/2021-08-04_16-29-50_screenshot.png]]
+
+#+DOWNLOADED: screenshot @ 2021-08-04 16:29:57
+[[file:images/Lecture_7/2021-08-04_16-29-57_screenshot.png]]
+
+** Bitonic Sort on a Hypercube
+- One-element-per-processor case
+  - How do we map the algorithm onto a hypercub?
+    - What is the comparator
+    - How do the wires get mapped?
+
+*** Illustration
+
+#+DOWNLOADED: screenshot @ 2021-08-04 16:38:20
+[[file:images/Lecture_7/2021-08-04_16-38-20_screenshot.png]]
+
+*** Communication Pattern
+
+#+DOWNLOADED: screenshot @ 2021-08-04 16:38:50
+[[file:images/Lecture_7/2021-08-04_16-38-50_screenshot.png]]
+
+*** Bitonic Sort Algorithm
+
+#+DOWNLOADED: screenshot @ 2021-08-04 16:39:07
+[[file:images/Lecture_7/2021-08-04_16-39-07_screenshot.png]]
+* TODO FINISH writing
 * Misc
 - OpenMP second assignment
 ** SIMD

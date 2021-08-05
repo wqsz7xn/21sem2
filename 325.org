@@ -665,7 +665,6 @@
 [[file:images/Tutorial_1/2021-08-01_15-39-01_screenshot.png]]
 
 - Highlighted is the getter/setter pair that the Jackson stuff will use
-  
 
 #+DOWNLOADED: screenshot @ 2021-08-01 15:39:59
 [[file:images/Tutorial_1/2021-08-01_15-39-59_screenshot.png]]
@@ -979,3 +978,65 @@
 - SOAP has a nice interface for discovering and consuming unknown services
 - REST: Uses HTTP as it's meant to be used, so it's able to get all the benefits
   of the optimisations of HTTP
+* Tutorial 2
+
+- 1ai:
+  - It's a cyclic dependency so it's going to throw an exception (run out of
+    stack space, stackoverflowerror)
+  - The types of CreditCard is lost when serializing, so it's going to serialize
+    to the base type. If the base type is abstract class it would try
+    instantiate it which it obviously can't do
+- 1ai:
+  - You're going to have to look at the recording for this one
+- 1b:
+  - @JsonIdentityInfo(property="id")
+    - generator=ObjectIdGenerators.PropertyGenerator.class)
+  - put this above line 1
+- or
+- JsonTypeIgnore(use = JsonTypeInfo.Id>CLASS, property = "type")
+  - put this above line 14
+  - this is bad because ignoring a property doesn't help because it creates the
+    instance from json which will miss a field. Incomplete type
+- 2:
+  -POST
+  - authenticate: /user/{id}?="{password}"
+    - would return session key {key}
+  - create
+    - /users
+    - requiredpayload: new user name and password
+    - responsepayload: 201, Location header (points to new resource that you
+      ahve just created)
+  - GET
+    - getBooks /books?="key = {key}, "id = {id}, "
+      - returns a application/xml of list of books
+  - /user/{id}/onloan?="key={key}"
+
+- andrew' solution
+  - create users
+    - /users
+      - requiredpayload: new user name and password
+      - responsepayload: 201, Location header (points to new resource that you
+	ahve just created)
+      - if this username is taken send back 409 (conflict)
+  - login
+    - /users
+      - requiredpayload: new user name and password
+      - responses with cookie if valid otherwise error
+  - Query books
+    - GET /books
+      - request payload: Start index size (optional)
+      - Response payload 200, OK, list of books (each with id, title, author, onLoan
+  - Query on Loan
+    - GET /users/books
+      - request: Auth cookie
+      - Response: if authenticated: 200 OK, list of books on load, same
+        strucuture, previous and next url links as well
+	as /books above
+	- otherwise if not logged in then 401 forbidden
+  - Borrow books
+    - PUT/books/{id}/borrow
+      - request: book id as path, authentication cookie
+      - reponse: if not authenticated then 401 response
+	- elseif book not found: 404 response
+	- elseif book is already on load: 400? 409?
+	- else 201: no content
