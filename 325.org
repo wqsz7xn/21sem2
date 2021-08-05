@@ -821,6 +821,89 @@
 
 - Exactly then same as server, but use the same dependency version
 
+** Object Relational Mapping (ORM)
+- ORM is the automated persistence of objects in a OO application to the tables
+  in a SQL database
+
+#+DOWNLOADED: screenshot @ 2021-08-04 20:42:47
+[[file:images/Lecture_3/2021-08-04_20-42-47_screenshot.png]]
+
+- ORM technology is relatively mature, and is widely adopted by applications
+  that operate on domain models
+
+
+#+DOWNLOADED: screenshot @ 2021-08-04 20:43:28
+[[file:images/Lecture_3/2021-08-04_20-43-28_screenshot.png]]
+
+- We can take advantage of all the features of relational databases which makes
+  them excellent for data persistence and storage, while still being able to
+  maintain and OO domain model that fits well with the rest of our application
+
+** Java Persistence API (JPA)
+- JPA is an ORM specification that defines
+  - A facility for specifying the mapping of persistence classes to a database
+    schema
+  - An API for performing CRUD operations on persistent instances
+  - A language (JPQL) and API for specifying queries using classes and
+    properties of classes
+  - The behaviours of the persistence engine in performing dirty checking, lazy
+    association fetching, caching, etc
+
+#+DOWNLOADED: screenshot @ 2021-08-04 20:47:08
+[[file:images/Lecture_3/2021-08-04_20-47-08_screenshot.png]]
+
+- Similar annotation style to JAXRS
+- annotations are the relation between your models
+- Entity marks it an an entity in the table and the ID is the primary key
+- This is widely considered to be a cleaner approach than other previous frameworks
+- open specification
+- Hibernate is our JPA implementation
+
+** First JPA
+- =@GeneratedValue= is a generated value for the id
+  - If we do not supply a value for the ID then when we persist it then
+    Hibernate will automatically generate one for you
+- You don't have to mark everything, all fields will be automatically persisted
+- You have to mark your collections =@ElementCollection=
+  - Whenever the message is saved to the database
+    - The list of comments are tied completely to the Message, it cannot be shared
+    - A comment has the =Embedded= annotation so it must be tied to an entity
+      class
+- Persistent unit are a set of classes that can be persisted together in the
+  database. It's an XML file.
+- Only provide the top level class, not the embeddable
+
+** Transparency and automation
+- JPA aims to provide transparent and automated persistence
+  - *Transparency* provides for a separation of concerns between persistent
+    classes and the persistence mechanism
+  - *Automation* relieves developers of low level persistence details
+- Using JPA:
+  - Minimally, =@Entity= and =@Id= need to be used on a persistent class
+  - Persistent classes must provide a default constructor
+  - Collection attributes must be types to an interface, not an implementation
+  - Persistent object fields can be accessed directly or by accessor methods
+  - Where accessors are used, the persistent class must conform to Java bean
+    conventions
+  - Constructor needs to be package visible for JPA can access it
+  - If you don't want getter/setter methods to be used, but require them for
+    JPA, then you can make them protected
+
+** Benefits of using ORM and JPA
+- Productivity
+  - JPA allows developers to focus on business logic and be relieved of low
+    level data access concerns
+- Maintainability (modifiabiliity)
+  - Automated ORM reduces LOC, making a system easier to understand and easier
+    to change
+- Performance
+  - In general, JPA implementations apply performance optimisations; JPA
+    deployments can be configured where necessary to address performance issues
+- Vendor independence
+  - JPA is a specification that is implemented by many vendors
+  - Using an ORM promotes portability: it insulates application code from
+    particular RDBMS products
+
 * Tutorial 1
 ** Question 1: Given these characteristics, what are three possible outcomes when trying to send a message from one host to another?
 - While the two computers have set up a session the link fails
