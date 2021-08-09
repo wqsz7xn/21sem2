@@ -971,7 +971,6 @@ processors do this 4 times faster (holy grail case)
 - Parallel running time will be bounded by the number of gates, the complexity
   is the longest bottleneck path
 
-
 ** Bitonic Sequence
 
 #+DOWNLOADED: screenshot @ 2021-08-04 16:11:46
@@ -1049,6 +1048,230 @@ processors do this 4 times faster (holy grail case)
 #+DOWNLOADED: screenshot @ 2021-08-04 16:39:07
 [[file:images/Lecture_7/2021-08-04_16-39-07_screenshot.png]]
 * TODO FINISH writing
+* Lecture 8
+** Parallel Graph Algorithms
+- Graph theory background
+- Minimum spanning tree
+  - Prims algorithm
+- Single-source shortest path
+  - Dijksta's algorithm
+- All Pairs Shortest Path
+  - Dijkstra's algorithm
+  - Floyd's algorithm
+- Maximal independent set
+  - Luby's algorithm
+- Most of these have sequential versions
+- Chapter 10 of textbook
+
+** Background
+- There are several ways to represent graphs
+  - Visually
+  - Adjacency matrix (usually for dense graphs)
+  - Adjacency matrix (usually for sparse graphs)
+
+#+DOWNLOADED: screenshot @ 2021-08-06 09:46:56
+[[file:images/Lecture_8/2021-08-06_09-46-56_screenshot.png]]
+
+** Minimum Spanning Tree
+- Compute the minimum weight spanning tree of an undirected graph
+
+#+DOWNLOADED: screenshot @ 2021-08-06 09:48:30
+[[file:images/Lecture_8/2021-08-06_09-48-30_screenshot.png]]
+
+- If there are n nodes in your original graph there will be n-1 edges in the
+  spanning tree
+- Construct a tree of minimum weight
+
+** Prim's Algorithm
+- =O(n^2) serial complexity for dense graphs
+- How can we parllelize this algorithm?
+- Which steps can be done in parallel?
+
+#+DOWNLOADED: screenshot @ 2021-08-06 09:51:39
+[[file:images/Lecture_8/2021-08-06_09-51-39_screenshot.png]]
+
+#+DOWNLOADED: screenshot @ 2021-08-06 09:52:00
+[[file:images/Lecture_8/2021-08-06_09-52-00_screenshot.png]]
+
+- You add the minimum cost edge adjacent to your current node and add that node
+  to the last of visited nodes, only add an edge if it doesn't create a cycle
+  - =O(n^2)= because you have to scan a whole row for a minimum cost edge
+    - You then visit the next minimum cost node and repeat
+    - This is the sequential speed
+- We can parallelize the searching task by dividing the row into a set of tasks
+  such that each processor can do that part of the search and return its minimum
+  found from the subset of the whole task
+  - Each finds their minimum cost weight, there's then a voting process for the
+    minimum of all those results
+  - There's some optimization that can be done here as well, if you have already
+    added nodes into your MST then you know that you don't have to look at those
+    nodes again and thus can exclude them from your row search space when doing
+    the paralllel formula. You can't add a vertex twice!
+
+** Parallel Formulation of Prim's Algorithm
+- Parallelize the inner-most loop of the algorithm
+  - Parallelize the selection of the "minimum weight edge" connecting an edge in
+    =V_T= to a vertex in =V-V_T= (the set of verticies that we have not selected)
+  - Parallelize the updating of the =d[]= array
+    - So because we have updated the graph they might have a new shortest
+      distance in the tree. Then =d[]= has to be updated, we can do this in paralllel
+- What is the maximum concurrency that such an approach can use?
+  - Depends on the number of verticies to be updated and added. This changes
+    (decreases) over the runtime of the algorithm. Concurrency decreases towards
+    the end because there will be more idle processors
+- How do we "implement" it on a distributed-memory architecture?
+  - Shared memory model, they can all share the adjacency matrix, they can also
+    share =d[]=. If you're on a cache based memory model then you have to update
+    =d[]= for each processor
+    - This could be a bit slow if you have a distributed system
+- Now we look into runtime
+  - Decompose the graph A (adjaceny matrix) and vector =d[]= using a 1D block
+    partitioning along columns
+    - Why columns?
+  - Assign each block of size n/p to one of the processors
+  - How will lines 10 & 12-13 be performed?
+  - Complexity?
+
+
+#+DOWNLOADED: screenshot @ 2021-08-06 10:06:19
+[[file:images/Lecture_8/2021-08-06_10-06-19_screenshot.png]]
+
+
+#+DOWNLOADED: screenshot @ 2021-08-06 10:06:27
+[[file:images/Lecture_8/2021-08-06_10-06-27_screenshot.png]]:w
+
+- So you are allocating a particular node in the adjacency matrix to a
+  particular processor, this is why we are using columns
+- n decreases over runtime
+- complexity
+  - improved by n^2/p which is really good, but there's communication time of
+    the results amongst processors
+
+** Single-Source Shortest Path
+- Given a source vertex s find the shortest-paths to all other verticies
+- Dijkstra's algorithm
+- How can it be parallelized for dense graphs?
+
+#+DOWNLOADED: screenshot @ 2021-08-06 10:10:16
+[[file:images/Lecture_8/2021-08-06_10-10-16_screenshot.png]]
+
+- Prims = Dijkstras except you're changing what you're tracking (d) instead of (d[])
+- You can parallelize dijkstras by doing the update step in paralllel
+
+** All-pairs Shortest Paths
+- Compute the shortest paths between all pairs of verticies
+- Algorithms
+  - Dijkstra's algorithm
+    - Execute the single-source algorithm n times
+  - Floyd's algorithm
+    - Based on dynamic programming
+
+*** Dijkstra's algorithm
+- Source-partitioned formulation
+  - Partition the sources along the different processors
+    - Is it a good algorithm?
+      - Computation & memory scalabiliity
+	- Doesn't scale at all with memory. Doesn't work well when p > n
+      - What is the maxmimum number of processors that it can use?
+	- n: how ever many source nodes you have
+      - We only like this algorithm because it is easy the parallize
+
+#+DOWNLOADED: screenshot @ 2021-08-06 10:18:35
+[[file:images/Lecture_8/2021-08-06_10-18-35_screenshot.png]]
+- Source-parallel formulation
+  - Used when p > n
+  - Processors are partitioned into n groups each having p/n processors (these
+    groups are also called teams)
+  - Each group is responsible for one single source SP computation
+  - Complexity? 
+
+#+DOWNLOADED: screenshot @ 2021-08-06 10:19:44
+[[file:images/Lecture_8/2021-08-06_10-19-44_screenshot.png]]
+
+*** Floyd's Algorithm
+- Solves the problem using a dynamic programming algorithm
+  - let d^k_i,j be the shortest path distance between verticies i and j that
+    goes through verticies 1,..., k
+
+#+DOWNLOADED: screenshot @ 2021-08-06 10:31:25
+[[file:images/Lecture_8/2021-08-06_10-31-25_screenshot.png]]
+
+#+DOWNLOADED: screenshot @ 2021-08-06 10:31:38
+[[file:images/Lecture_8/2021-08-06_10-31-38_screenshot.png]]
+ 
+- Complexity =O(n^3)= because of triple for loop
+- Note: The algorithm can run in-place
+- How can we parallelize it?
+  - We would parallize the for loop
+    - You would do several rows/columns split amongst processors
+
+** Maximal Independent Sets
+- Find the maximal set of vertices that are not adjacent to each other
+
+#+DOWNLOADED: screenshot @ 2021-08-07 09:19:31
+[[file:images/Lecture_8/2021-08-07_09-19-31_screenshot.png]]
+
+- Independent set: Is the the graph, if v is the independent set then each
+  vertex in v will not have an edge to any other vertex in v
+- Maximum independent set it hard
+  - Maximum is find globally max sized set
+  - Maximal is local greedy: largest set of verticies such that you can't add
+    any more verticies to make a larger set. This is locally optimal, but not
+    necessarily globally optimal
+- {a, d, i, h} actually is a maximal set (but not maximum)
+- generally the algorithm goes like this
+  - You pick a vertex Q, you then add Q to your independent set and then delete
+    Q and all it's neighbours, repeat this process until there are no more
+    verticies in the graph
+    - can we do the above but better? I would assume you would be able to remove
+      verticies from the graph as long as the who sets of verticies that you are
+      picking don't overlap! There would be some communication requirement in
+      this though. It should be similar to quicksort when picking the pivot
+      tree, then they vote and you either win or lose after that voting
+      process.
+    - Parallel:
+      - All processors randomly pick and vertex, if my number is smaller than
+        all of my neighbours then i get to add my vertex
+      - If two processors pick the same number then they go off lowest processor
+        id 
+      - This seems kinda bad though? Processors are picking a number then they
+        have to repick if someone else wins
+
+** Serial Algorithms for MIS
+- Practical MIS algorithms are incremental in nature
+  - Start with an empty set
+  - 1. Add the vertex with the smallest degree
+  - 2. Remove adjacent verticies
+  - 3. Repeat 1--2 until the graph becomes empty
+- These algorithms are impossible to parallelize
+  - Why?
+- Parallel MIS algorithms are based on the ideas initially introduced by Luby
+
+** Luby's MIS Algorithm
+- Randomized algorithm
+  - Starts with an empty set
+  - 1. Assigns random numbers to each vertex
+  - 2. Verticies whose random number are smaller than all of the numbers
+    assigned to their adjacent verticies are included in the MIS
+  - Verticies adjacent to the newly inserted verticies are removed
+  - Repeat steps 1--3 until the graph becomes empty
+- This algorithm will terminate in =O(log(n))= iterations
+- Why is this a good algorithm to parallelize?
+- How will the parallel formulation proceed?
+  - Shared memory 
+  - Distributed memory
+- If you lose a round then you're never going to be included in the independent
+  set and you can be eliminated from consideration!
+
+#+DOWNLOADED: screenshot @ 2021-08-07 09:38:12
+[[file:images/Lecture_8/2021-08-07_09-38-12_screenshot.png]]
+
+- If you want a large maximal independent set then you're going to weigh the
+  random number generation to be lower for verticies with low degree so that
+  they are picked first. There are no guarantees that you get a _maximum_
+  independent set
+  - Pick a random number and multiply it by my degree!
+
 * Misc
 - OpenMP second assignment
 ** SIMD

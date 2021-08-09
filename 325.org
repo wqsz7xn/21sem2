@@ -903,6 +903,415 @@
   - Using an ORM promotes portability: it insulates application code from
     particular RDBMS products
 
+* Lecture 4
+** Mapping Persistent classes
+
+#+DOWNLOADED: screenshot @ 2021-08-09 08:43:37
+[[file:images/Lecture_4/2021-08-09_08-43-37_screenshot.png]]
+
+- Go by colour mapping here above
+
+** Mapping Value Types
+*** Entity vs Value Types
+- Entity Types
+  - An entity has a *database identity*, allowing the entity to be queried
+  - An entity instance has its own lifecycles; entity instances can exist
+    independently (Address lives independently of users
+  - A reference to an entity object is persisted as a foreign key constrained
+    value
+
+#+DOWNLOADED: screenshot @ 2021-08-09 08:46:11
+[[file:images/Lecture_4/2021-08-09_08-46-11_screenshot.png]]
+
+- Value Types
+  - A value type instance forms part of some other object, composed by, cannot
+    by shared. Even though they might be the same state address is two different
+    instances
+  - The lifespan of a value-type instance is dictated by its owning object
+  - Value-type instances shouldn't be shared
+- Represent as a user and address table, and a user column with address id
+
+#+DOWNLOADED: screenshot @ 2021-08-09 08:48:58
+[[file:images/Lecture_4/2021-08-09_08-48-58_screenshot.png]]
+- User table, and all columns required to make up the address in the same table
+  (kinda merged)
+
+*** Mapping Entities and Value Types
+
+#+DOWNLOADED: screenshot @ 2021-08-09 08:54:10
+[[file:images/Lecture_4/2021-08-09_08-54-10_screenshot.png]]
+
+- Entity classes must be annotated with =@Entity=
+- Entity classes must have a database identity field, annotated with =@Id=. To
+  have the database generate and assign the value for this field, use =@GeneratedValue=
+- Because the =@Id= annotation is used on a field JPA accesses fields directly
+  (without needing to invoke accessor methods)
+- Property-based access can also be specified requiring use of a get/set pair
+  of methods for each property. JPA will then use these methods instead of
+  accessing fields directly
+- Specify a value-type using the =@Embeddable= annotation
+- We are using =Long= as a datatype because this is double the size (more range)
+
+** What Should be an Entity or Value type in your System?
+- Bid can't exist without an Item
+- An item class with a list of bids
+  - Each bid would have a bidder
+  - Item class would have a user field representing the seller
+- Database
+  - User table with its fields and the address fields
+  - Item table with its fields as well as a seller ID
+  - Each item needs a list of bids
+  - Each Bid would have an item ID and a bidder ID (as a user ID)
+- Object structure
+
+#+DOWNLOADED: screenshot @ 2021-08-09 09:05:29
+[[file:images/Lecture_4/2021-08-09_09-05-29_screenshot.png]]
+
+#+DOWNLOADED: screenshot @ 2021-08-09 09:03:40
+[[file:images/Lecture_4/2021-08-09_09-03-40_screenshot.png]]
+
+** Alternative Design
+- Store a list of bids that a user has made in the User class
+- Bid needs to be referred to by both Item and User
+  - Thus bid becomes an entity type with its own ID field
+  - User can then add a bid field
+
+
+#+DOWNLOADED: screenshot @ 2021-08-09 09:05:37
+[[file:images/Lecture_4/2021-08-09_09-05-37_screenshot.png]]
+
+
+#+DOWNLOADED: screenshot @ 2021-08-09 09:05:47
+[[file:images/Lecture_4/2021-08-09_09-05-47_screenshot.png]]
+
+** Type Mapping
+
+#+DOWNLOADED: screenshot @ 2021-08-09 09:07:56
+[[file:images/Lecture_4/2021-08-09_09-07-56_screenshot.png]]
+
+- Fields mapped to Columns
+- Each embeddable field are mapped to columns in the Owner table (look inside
+  the embeddable type and copy out everything)
+- Transient fields are ignored and not mapped
+- Enumerated fields: The field is mapped to a column whose value is the
+  property's ordinal value (0, 1,2,3,4)
+- An enum type marked with the @Enumerated thing is then converted to the
+  string value of that type.
+  - Know the difference between the above two!
+- Java dates are temporal (pick one of that algebra). This still works fine but
+  now you don't need this!
+
+** Mapping Collections
+
+#+DOWNLOADED: screenshot @ 2021-08-09 09:14:29
+[[file:images/Lecture_4/2021-08-09_09-14-29_screenshot.png]]
+
+- We have not yet dealt with collections
+- What would be generated from the above would be this
+  - Remember that you can't store a set in a single cell, has to be a single
+    value
+
+#+DOWNLOADED: screenshot @ 2021-08-09 09:15:52
+[[file:images/Lecture_4/2021-08-09_09-15-52_screenshot.png]]
+
+- Note that if it has multiple images then it will have multiple key values (see
+  two 1 values above)
+- The key is a combination of the item id and image name, thus these have to be
+  different for every image name for the same item
+- Mapping a collection enables
+  - Execution of a SQL select statement to load the collection when it is
+    accessed
+  - Cascading persistence: When an Item is saved, its image names are
+    automatically saved
+  - Lifecycle dependencies: when an Item is deleted, so too are its image names
+
+
+#+DOWNLOADED: screenshot @ 2021-08-09 09:19:46
+[[file:images/Lecture_4/2021-08-09_09-19-46_screenshot.png]]
+
+** Mapping a Set
+- You need an annotation =@ElementCollection=
+  - Optionally you can change all the field names if you would like using
+    =@CollectionTable= which lets you define the name of the table, the join
+    columns (foreign key column) and the column name as well using =@Column=
+
+#+DOWNLOADED: screenshot @ 2021-08-09 09:22:00
+[[file:images/Lecture_4/2021-08-09_09-22-00_screenshot.png]]
+
+** Collection Interfaces
+- Collections should be typed to an interface
+- The interface determines the collection's mapping to a database
+- JPA expects a suitable implementation, and may wrap it with an implementation
+  to handle dirty checking and lazy loading
+
+#+DOWNLOADED: screenshot @ 2021-08-09 09:23:11
+[[file:images/Lecture_4/2021-08-09_09-23-11_screenshot.png]]
+
+
+#+DOWNLOADED: screenshot @ 2021-08-09 09:23:19
+[[file:images/Lecture_4/2021-08-09_09-23-19_screenshot.png]]
+
+- Use the interface, not the actually collection type, this is just so that JPA
+  knows what to do with the type, if it's a set it can see how to handle it for
+  example
+** Collections of Value Types
+- Remember when you are trying to make something a Set (ie: no duplicates), you
+  *NEED* to be implementing your =equals= and =hashCode= overrides because this
+  is what Set works off to ensure uniqueness
+
+#+DOWNLOADED: screenshot @ 2021-08-09 09:28:04
+[[file:images/Lecture_4/2021-08-09_09-28-04_screenshot.png]]
+
+** Entity Associations
+*** Fully dependent lifecycle
+
+#+DOWNLOADED: screenshot @ 2021-08-09 09:34:02
+[[file:images/Lecture_4/2021-08-09_09-34-02_screenshot.png]]
+
+- Part components (Images) are fully dependent on their own entities (Items)
+- Components are saved, updated and removed with their owning entities
+- Collections of components are appropriate for dependent lifecycles
+
+*** Independent lifecycle
+
+#+DOWNLOADED: screenshot @ 2021-08-09 09:36:58
+[[file:images/Lecture_4/2021-08-09_09-36-58_screenshot.png]]
+
+- Two entities are related, but they don't have a dependent lifecycle
+- One instance can be saved, updated or removed independently of the other
+- More fine-grained control is required to model entity associations
+
+*** Many-to-one Unidirectional Association
+
+#+DOWNLOADED: screenshot @ 2021-08-09 09:41:26
+[[file:images/Lecture_4/2021-08-09_09-41-26_screenshot.png]]
+
+*** Making the Association Bidirectional
+
+#+DOWNLOADED: screenshot @ 2021-08-09 09:43:01
+[[file:images/Lecture_4/2021-08-09_09-43-01_screenshot.png]]
+
+** Cascading State
+- If you do something (EG: save an item) should it then save all the bids it's
+  associated with?
+
+#+DOWNLOADED: screenshot @ 2021-08-09 09:48:58
+[[file:images/Lecture_4/2021-08-09_09-48-58_screenshot.png]]
+
+- If you don't have persist you would have to save those bids manually, but if
+  you make it persist then you add the items then you just would need to save
+  the item itself in order to save the bids (done in the commit im pretty sure)
+- This is called transitive persistence
+- Can care about domain model more than persistence issues
+
+*** Cascading Deletion
+- Makes no sense to delete and item and then have a bunch of bids lying around
+  with no item associated with it
+- Thus you should also delete the bids (cascade)
+
+  #+DOWNLOADED: screenshot @ 2021-08-09 09:51:58
+  [[file:images/Lecture_4/2021-08-09_09-51-58_screenshot.png]]
+- Top left would be what you would have to do before a cascade deletion
+- Then we cascade delete some stuff on the top right
+  - Right isn't any more efficient, it's just more terse. It's still loading all
+    the bids into memory and then deleting them
+
+*** Orphan removal
+- Stronger form of removal
+
+#+DOWNLOADED: screenshot @ 2021-08-09 09:54:36
+[[file:images/Lecture_4/2021-08-09_09-54-36_screenshot.png]]
+*** TODO Put the rest of the transitive problem here
+** Mapping Inheritance
+- Inheritance is such a visible structural mismatch between the OO and
+  relational worlds
+  - The OO model supports both /has-a/ and /is-a/ relationships
+  - The relational paradigm offers only /has-a/
+- There are several strategies for mapping an inheritance hierarchy to a
+  relational schema
+  - The best strategy to use is dependent on application characteristics; each
+    strategy has involves trade-offs
+  - The simplest strategy is /table per concrete class/
+
+** Table per Concrete Class
+- Construct the database schema
+- How well does the schema support polymorphic queries?
+  - =select db from BillingDetails bd=
+- How do yo model a polymorphic association?
+  - Class User has a many-to-one association with BillingDetails
+- What are the limitations of this strategy?
+
+#+DOWNLOADED: screenshot @ 2021-08-09 12:11:16
+[[file:images/Lecture_4/2021-08-09_12-11-16_screenshot.png]]
+- BillingDetails is abstract
+- The database would have a CreditCard table with all of its own fields and the
+  BillingDetails fields
+- Similar for BankAccount
+
+
+#+DOWNLOADED: screenshot @ 2021-08-09 12:12:45
+[[file:images/Lecture_4/2021-08-09_12-12-45_screenshot.png]]
+- By default, superclass properties are ignored, so =@MappedClass= is necessary
+  for the owner property to be mapped for subclasses
+- If you just put the foreground stuff then you're just going to get those
+  details and none of the superclass properties
+
+*** Better way of doing this: Table per Concrete class with Unions
+
+#+DOWNLOADED: screenshot @ 2021-08-09 12:15:48
+[[file:images/Lecture_4/2021-08-09_12-15-48_screenshot.png]]
+
+- Instead of using a mapped class your BillingDetails not how that id inside it
+  - Your now using the inheritance annotation using the table per class strategy
+  - Now this will work fine because of the above annotation
+
+** Table per Class Hierarchy
+
+#+DOWNLOADED: screenshot @ 2021-08-09 12:18:17
+[[file:images/Lecture_4/2021-08-09_12-18-17_screenshot.png]]
+
+- Single table to store all the instances from the entire type hierarchy, this
+  will have all the columns from CreditCard, BillingDetails and BankAccount
+- In order for JPA to determine what row links to what type we have an extra
+  annotation called =DiscriminatorColumn= which you put in the superclass, so
+  whatever =DiscriminatorValue= you give the the child classes then it
+  represents that type in the table
+  - If you have a CreditCard then all the bank account stuff is null and vice
+    versa
+- This is actually a pretty good strategy because of its simplicity and
+  performance
+  - One database table and easier to write SQL by hand
+  - More performant because there are no joins
+- Drawback is that it's not in 3NF because there is a dependency on a non
+  primary key (DTYPE is depended on)
+- You cannot enforce =nullable = false= because that defeats the point
+
+** Table per Class with Joins
+- With this strategy, the table of a concrete =@Entity= contains
+  - Columns for each *non-inherited* property, declared by the subclass itself
+  - A primary key that is also a foreign key linking to the superclass table
+  - Doesn't need the discriminator column/value stuff
+
+#+DOWNLOADED: screenshot @ 2021-08-09 12:24:35
+[[file:images/Lecture_4/2021-08-09_12-24-35_screenshot.png]]
+
+- See the =@Inheritance= tag strategy
+- Each of the children classes have a foreign key =ID= for the BillingDetails
+  primary key
+- This normalizes the database schema, so there's no need for any null values
+- Less performant because you need to join the tables so there's more work
+  required to do queries
+
+** Polymorphic Queries
+*** Strategy 1
+- Table per concrete class
+
+#+DOWNLOADED: screenshot @ 2021-08-09 12:29:18
+[[file:images/Lecture_4/2021-08-09_12-29-18_screenshot.png]]
+
+- Translates to two sql statements which then are smashed together
+
+*** Strategy 2
+- Table per concrete class with unions
+- the table is the same as in strategy 1 remember that
+- however the sql that we generate is nullable so it looks different
+
+#+DOWNLOADED: screenshot @ 2021-08-09 12:31:32
+[[file:images/Lecture_4/2021-08-09_12-31-32_screenshot.png]]
+
+- runs as one big SQL statement
+- generates CLAZZ which is used in the merged table
+- Likely to perform better than strategy run (one slightly larger query is
+  faster than multiple small ones that generate result sets)
+
+*** Strategy 3
+- Table per class hierarchy
+
+#+DOWNLOADED: screenshot @ 2021-08-09 12:32:49
+[[file:images/Lecture_4/2021-08-09_12-32-49_screenshot.png]]
+
+*** Strategy 4
+- Table per class with joins
+
+#+DOWNLOADED: screenshot @ 2021-08-09 12:33:26
+[[file:images/Lecture_4/2021-08-09_12-33-26_screenshot.png]]
+
+- Does an outerjoin (left)
+- The result of this is the same kind of table that we saw as an output in
+  strategy 3
+- If you don't need all the details from all the child classes then you don't
+  need to do a full outer join and can do an inner join instead
+
+#+DOWNLOADED: screenshot @ 2021-08-09 12:34:57
+[[file:images/Lecture_4/2021-08-09_12-34-57_screenshot.png]]
+
+- Only joins what it needs
+
+** Polymorphic Associations
+*** Strategy 1
+- Table per concrete class
+
+#+DOWNLOADED: screenshot @ 2021-08-09 12:36:41
+[[file:images/Lecture_4/2021-08-09_12-36-41_screenshot.png]]
+
+- EG: spouses share a bank account
+- you can't have BillingDetails_id as a key to two different values
+- Doesn't support polymorphic associations
+
+*** Strategy 2
+
+#+DOWNLOADED: screenshot @ 2021-08-09 12:37:37
+[[file:images/Lecture_4/2021-08-09_12-37-37_screenshot.png]]
+
+- BillingDetails_ID isn't set up as a proper foreign key
+- Primary key values within CreditCard and BankAccount must be globally unique
+  (for ID) otherwise a BillingDetails_ID could refer to both a row in creditcard
+  and a row in bankaccount which we wouldn't want
+
+*** Strategy 3 and 4
+
+#+DOWNLOADED: screenshot @ 2021-08-09 12:40:42
+[[file:images/Lecture_4/2021-08-09_12-40-42_screenshot.png]]
+
+- Strategy 3
+  - Easy for the user to have a primary key that refers to the billing details
+    table
+- Strategy 4
+  - User table has key and all subclasses have that as a foreign key
+
+** TODO Go over the example again in your own time, was a good exercise
+** Summary
+
+#+DOWNLOADED: screenshot @ 2021-08-09 12:48:50
+[[file:images/Lecture_4/2021-08-09_12-48-50_screenshot.png]]
+
+** Lazy Loading
+- We can setup classes to be loaded from disk lazily, which means instead of
+  being loaded all at once they are only loaded when they are required (on
+  demand)
+- You could set this up if you hardly access a users details for example
+
+#+DOWNLOADED: screenshot @ 2021-08-09 12:50:13
+[[file:images/Lecture_4/2021-08-09_12-50-13_screenshot.png]]
+
+- Laziness means that you don't know the type, because this would mean that you
+  would have to go to disk for this.
+  - We use a proxy type to represent to this
+- When we invoke the proxy (eg call pay), this is when JPA goes to the database,
+  loads the object, create the object and type it and perform the operation
+  - The proxy in this case would FORWARD the call to the actual type (CreditCard)
+- What if we have one of these proxies and want to call a subclass method? We
+  don't have the type information and thus we can't call the subclass method
+  that we would like
+  - We need to explicitly create a creditCard proxy 
+
+#+DOWNLOADED: screenshot @ 2021-08-09 12:54:02
+[[file:images/Lecture_4/2021-08-09_12-54-02_screenshot.png]]
+
+- Create the proxy manually using the CreditCard.class, meaning that you can
+  create the creditcard specific method. This is still lazy so it's all good!
+- This is an example where transparency can't be fully supported
+  
 * Tutorial 1
 ** Question 1: Given these characteristics, what are three possible outcomes when trying to send a message from one host to another?
 - While the two computers have set up a session the link fails
