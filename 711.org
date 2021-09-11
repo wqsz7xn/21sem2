@@ -1213,7 +1213,7 @@ processors do this 4 times faster (holy grail case)
 
 - Independent set: Is the the graph, if v is the independent set then each
   vertex in v will not have an edge to any other vertex in v
-- Maximum independent set it hard
+- Maximum independent set is hard
   - Maximum is find globally max sized set
   - Maximal is local greedy: largest set of verticies such that you can't add
     any more verticies to make a larger set. This is locally optimal, but not
@@ -1271,7 +1271,37 @@ processors do this 4 times faster (holy grail case)
   they are picked first. There are no guarantees that you get a _maximum_
   independent set
   - Pick a random number and multiply it by my degree!
+    
+* TODO Lecture 9
+* Lecture 10
+- A thread is a single, sequential flow of control within a program. Within each
+  thread, there is a single point of execution
+- Threads execute concurrently
+- Most tradition programs consist of a single thread
+- Threads execute within (and share) a single address space
+- Synchronization elements ensure proper memory access
+** Advantages of using Threads
+- Improve performance
+  - Multiple processors: threads may run on seperate processors concurrently
+  - Uniprocessors: threads permit overlapping of slow operations (such as I/O)
+    with computation
+  - Using the natural parallelism in applications
+    - User interaction (slow) can be a thread
+  - Multiple threads allow a server to handle clients' requests in parallel
+    instead of artificially
+** Shared resources
 
+#+DOWNLOADED: screenshot @ 2021-08-23 15:19:04
+[[file:images/Lecture_10/2021-08-23_15-19-04_screenshot.png]]
+
+** Private resources
+
+#+DOWNLOADED: screenshot @ 2021-08-23 15:20:11
+[[file:images/Lecture_10/2021-08-23_15-20-11_screenshot.png]]
+
+* Lecture 11
+- C++ uses its own thread library instead of unix threads. it might use the unix
+  thread library underneath but it's platform independent
 * Misc
 - OpenMP second assignment
 ** SIMD
@@ -1362,3 +1392,6 @@ minimised
   monotonically increases and <a_i+1, ..., a_n-1> is monotonically decreasing,
   or
 - 2) there exists a cyclic shift of indices so that (1) is satisfied
+** Minimal Feedback Vertex Set
+- Is the minimal set of verticies that have to be removed in order to leave a
+  graph without any cycles

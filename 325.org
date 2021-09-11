@@ -1312,6 +1312,739 @@
   create the creditcard specific method. This is still lazy so it's all good!
 - This is an example where transparency can't be fully supported
   
+* Lecture 5
+** Fetch plans
+- JPA supports two fundamental techniques for loading data
+  - Lazy loading
+    - A domain-model object graph is loaded in small parts, as the graph is
+      navigated
+    - Lazy loading can be bad because it can put heavy load on the database when
+      you need to fetch a bunch
+  - Eager fetching
+    - A domain-model object graph is loaded by minimising the number of database
+      requests
+    - Basically loads everything at once, needs a complex sql request
+
+#+DOWNLOADED: screenshot @ 2021-08-11 15:07:59
+[[file:images/Lecture_5/2021-08-11_15-07-59_screenshot.png]]
+
+** Loading Associations
+
+#+DOWNLOADED: screenshot @ 2021-08-11 15:09:08
+[[file:images/Lecture_5/2021-08-11_15-09-08_screenshot.png]]
+
+- Each item belongs to one user, a user can have many items
+- The default is the eager fetching
+- 1. The persistance context, it's an area in memory where objects loaded in the
+  database are stored
+- 2. run a tx to find an item from the database
+- 3. close the persistent context
+- 4 - 5. So these lines depend on whether or not you lazy/eager fetched. If you
+  eager fetched then the seller would be loaded with the item, but instead if
+  you lazy loaded you would have a proxy, the proxy object does have the id of
+  the object but it doesn't have the username which is in the database but it
+  hasn't been loaded. (you would get the lazyinitialisationexception)
+
+** Entity Proxies
+
+#+DOWNLOADED: screenshot @ 2021-08-11 15:09:23
+[[file:images/Lecture_5/2021-08-11_15-09-23_screenshot.png]]
+
+- Proxy is something that is generated at runtime and has the same interface as
+  the class that it's proxying but it only has the id (defined in the database)
+  loaded
+- Above in the circle is the proxy which forwards the calls to the actual object
+
+#+DOWNLOADED: screenshot @ 2021-08-11 15:09:32
+[[file:images/Lecture_5/2021-08-11_15-09-32_screenshot.png]]
+
+-entity manager get reference creates a proxy to those item and user, but it
+doesn't actually read it in when creating the bid to the database
+ 
+** Lazy Persistent Collections
+- Persistent collections that are mapped with =@ElementCollection=, =@OneToMany=
+  and =@ManyToOne= are, by default, lazily loaded
+
+#+DOWNLOADED: screenshot @ 2021-08-11 15:10:26
+[[file:images/Lecture_5/2021-08-11_15-10-26_screenshot.png]]
+
+- Many to one fetched eagerly, but all other cases are fetched lazily by
+  default.
+- Persistence util you can check if the stuff is loaded from a lazy collection
+- It's not a hashset when you load it, it's a proxy for a collection
+
+#+DOWNLOADED: screenshot @ 2021-08-11 15:10:35
+[[file:images/Lecture_5/2021-08-11_15-10-35_screenshot.png]]
+
+** Eager Fetching
+
+#+DOWNLOADED: screenshot @ 2021-08-11 15:10:48
+[[file:images/Lecture_5/2021-08-11_15-10-48_screenshot.png]]
+
+- you can set the fetch type to change to default or lazy, many to one is eager
+  by default
+- So you can do what you like with the data even after the persistance context
+  is closed
+
+** Eager Fetching & Lazy Loading
+
+#+DOWNLOADED: screenshot @ 2021-08-11 15:11:05
+[[file:images/Lecture_5/2021-08-11_15-11-05_screenshot.png]]
+
+- This is what happens for the above slide, the images are lazy loaded but the
+  rest of the structure is eager loaded. Because the persistance manager is
+  killed at 3 it means that if you try to do anything with the images collection
+  proxy object at step 4 that means that you're going to get an exception
+
+** Fetch Strategies
+- A fetch plan should generally use lazy loading for associations and
+  collections
+- The goal is to minimise the number of SQL requests and to simplify them
+
+#+DOWNLOADED: screenshot @ 2021-08-11 15:12:05
+[[file:images/Lecture_5/2021-08-11_15-12-05_screenshot.png]]
+
+- Loading too many small pieces of data will impact performance but doing too
+  many joins is also bad for memory. Eager fetching can cause results and that
+  means that you're going to run into memory problems
+
+*** The n+1 Selects Problem
+
+#+DOWNLOADED: screenshot @ 2021-08-11 15:14:26
+[[file:images/Lecture_5/2021-08-11_15-14-26_screenshot.png]]
+
+- All users are loaded lazily (assume)
+- When you do the assert loop then you're triggering the entity manager to load
+  from the database for the users
+  - One sql query to load all the items, and then one sql query EACH to load
+    each user THIS IS VERY INEFFICIENT which impacts performance, so one sql for
+    loading items, then 100 if there are 100 users for looping over, making a
+    total of 101 queries
+- Lazily loading data in this way is very inefficient and will negatively impact
+  performance
+- Where a use case dictates that, eg. for all Items their bids must be accessed,
+  eager fetching appears to be a better solution..., but this can lead to the
+  Cartesian product problem
+
+*** The Cartesian Product Problem
+
+#+DOWNLOADED: screenshot @ 2021-08-11 15:15:42
+[[file:images/Lecture_5/2021-08-11_15-15-42_screenshot.png]]
+
+#+DOWNLOADED: screenshot @ 2021-08-24 11:38:28
+[[file:images/Lecture_5/2021-08-24_11-38-28_screenshot.png]]
+
+- So let's say that there are 3 bids for this item and the item has 3
+  images. This means that there are 9 rows in the resulting table. The
+  highlighted table is the only data that is needed/unique data. That means that
+  the rest of the rows are wasted. Liberal use of eager fetching can ruin the
+  performance of your application
+
+** Optimizations
+- The Hibernate JPA provider offers strategies for addressing the n+1 selects
+  and Cartesian product problems. This doesn't apply to JPA, just hibernate
+- n + 1 selects
+  - Collections can be pre-fetched using SQL sub-select statements. This allows
+    many collections to be loaded with a single round trip to the database
+  - So instead of doing the n loading sql statements, you can set up a statement
+    which says, "whenever one of those bids has these information loaded you
+    should load every other bids information" using a single query
+- Cartesian product
+  - Hibernate can eagerly load data using additional SQL select statements
+    instead of join operations which saves the need for Cartesian products
+
+*** Collection pre-fetching using sub-selects
+
+#+DOWNLOADED: screenshot @ 2021-08-24 11:48:28
+[[file:images/Lecture_5/2021-08-24_11-48-28_screenshot.png]]
+
+- It's remembered this query to get all the items, so it uses the subselect that
+  fetches all of the items in a single sql query. So you're only going to ever
+  need 2 queries
+
+*** Using additional selects instead of joins
+
+- We want to avoid the Cartesian product of the massive table that is only
+  fetched once, what we can do instead is that we can annotate the fields with a
+  fetchmode select which then says that these should be fetched using separate
+  subselect statements which saves us from having to join all those tables and
+  waste all of those rows
+
+#+DOWNLOADED: screenshot @ 2021-08-24 11:51:13
+[[file:images/Lecture_5/2021-08-24_11-51-13_screenshot.png]]
+
+- 3 queries, hibernate will combine these result sets as needed instead of just
+  creating one big table
+
+** Dynamic eager fetching
+
+#+DOWNLOADED: screenshot @ 2021-08-24 11:52:44
+[[file:images/Lecture_5/2021-08-24_11-52-44_screenshot.png]]
+
+- So by default it's just doing lazy loading and then if you want to do eager
+  then you can just manually form your own jpql statement to fetch it which is
+  eager
+
+** An overview of JPQL
+- A JPQL query is developed in 3 steps:
+  - Creation: A query is expressed in terms of selection [from], restriction
+    [where] and projection [select] elements
+  - Preparation: Query parameters are bound to values
+  - Execution: The query is executed against the database and retrieves data
+- In JPQL, queries are expressed in terms of entity classes and property (field)
+  names
+- JPQL queries are created by the Entity Manager
+
+#+DOWNLOADED: screenshot @ 2021-08-24 12:24:19
+[[file:images/Lecture_5/2021-08-24_12-24-18_screenshot.png]]
+
+- Select o from Object o
+  - Means that you can select all items in the database, it's a polymorphic
+    query
+- where i.id = :id
+  - Will be replaced by the set parameter
+
+*** Query Preparation and Execution
+
+#+DOWNLOADED: screenshot @ 2021-08-24 12:28:11
+[[file:images/Lecture_5/2021-08-24_12-28-11_screenshot.png]]
+
+- where b.item = :item
+  - b.item is short for saying "b.item.id" which always us to nicely supply the
+    whole item in the query instead of just the id
+    - You can also provide typed queries which assert the return type on your
+      queries which removes the need for the casting on the left
+
+*** Query restriction
+
+#+DOWNLOADED: screenshot @ 2021-08-24 12:32:53
+[[file:images/Lecture_5/2021-08-24_12-32-53_screenshot.png]]
+
+- Just some examples of query restriction, where they must follow the predicate
+  in order to be able to be a row in the resulting column
+- is not empty, if the item set is not empty then return it
+- member of if the item that you're parameterising is in the category then you
+  should return this category
+
+#+DOWNLOADED: screenshot @ 2021-08-24 12:36:08
+[[file:images/Lecture_5/2021-08-24_12-36-08_screenshot.png]]
+
+*** Query projection
+- Specifying what data to return in the result set
+- The query here results in the Cartesian product for item and bid (ie the
+  result set given back would be every possible item and bid)
+
+#+DOWNLOADED: screenshot @ 2021-08-24 12:38:07
+[[file:images/Lecture_5/2021-08-24_12-38-07_screenshot.png]]
+
+*** Implicit Association Joins
+- Three ways of expressing joins, this is one of them
+- =b.item.name= this is an implicit join, where the bid has been joined on the
+  item table, JPA will do this join behind the scenes in order to bet the item
+  names that the particular bid is bid on
+  - It will join on the ITEM_ID foreign key, this is an example of an implicit
+    inner join
+
+
+#+DOWNLOADED: screenshot @ 2021-08-24 12:45:37
+[[file:images/Lecture_5/2021-08-24_12-45-37_screenshot.png]]
+
+*** Explicit joins for restriction
+- We are going to use the same table structure but now an item has a reference
+  back to bids (item will have a set of bids)
+- We are explicitly saying that we are using a join in our query so that we are explicit
+
+#+DOWNLOADED: screenshot @ 2021-08-24 12:48:27
+[[file:images/Lecture_5/2021-08-24_12-48-27_screenshot.png]]
+
+*** Explicit joins for inclusion
+
+#+DOWNLOADED: screenshot @ 2021-08-24 12:54:58
+[[file:images/Lecture_5/2021-08-24_12-54-58_screenshot.png]]
+
+
+#+DOWNLOADED: screenshot @ 2021-08-24 12:56:36
+[[file:images/Lecture_5/2021-08-24_12-56-36_screenshot.png]]
+
+*** Explicit joins with eager fetching
+- Let's say that when we get an item that bids are lazy loaded, but now we want
+  bids to bit loaded with items
+
+#+DOWNLOADED: screenshot @ 2021-08-24 12:58:48
+[[file:images/Lecture_5/2021-08-24_12-58-48_screenshot.png]]
+
+- Note that JPA is keeping the duplicate row here
+
+** Transaction Essentials
+
+- Banking service, two operations
+  - Transfer from one account to another
+  - Or see the balance of an account
+- Transactions are used so that we can process across several threads incoming
+  client requests
+- Why transactions are important: image here. Client1 withdraws (in order to
+  transfer) then client 2 comes along and wants to get account balances. Lack of
+  isolation causes the second transaction to be affected (wrong result)
+
+#+DOWNLOADED: screenshot @ 2021-08-24 13:57:58
+[[file:images/Lecture_5/2021-08-24_13-57-58_screenshot.png]]
+
+** ACID attributes
+- Atomicity
+  - All operations in a transaction execute as an atomic unit (ie they either
+    all happen or non of them happen)
+- Consistency
+  - Concurrently executing transactions do not compromise the data they operate
+    on
+- Isolation
+  - The effects of concurrently executing incomplete transactions shouldn't be
+    visible
+- Durability
+  - Changes made by a transaction should be durable, even if the system fails
+    after the transaction has completed successfully
+
+** Programming transactions with JPA
+- We do all our edits on the database within a transaction
+- If we transaction will fail somewhere in the middle of the
+  transaction you can all =setRollbackOnly= which will rollback the current
+  transaction to the previous state
+
+** Database-level concurrency control
+- We want to isolate transactions from each other
+- If we don't want to serialize the transactions (because that's just slow)
+- We want transactions to be occurring at the same time in the name of speed
+  
+*** Lost update
+- Transaction A updates data D1; transaction B does likewise. Transaction A
+  commits and then transaction B aborts
+- B's abortion returns D1 to its state when B started, undoing A's update
+
+#+DOWNLOADED: screenshot @ 2021-08-24 14:06:14
+[[file:images/Lecture_5/2021-08-24_14-06-14_screenshot.png]]
+
+*** Dirty read
+- Transaction A updates data D1; transaction B reads the updated (and
+  uncommitted) value for D1. Transaction A aborts while B commits
+- B may have acted incorrectly based on the state of D1 that it read
+
+#+DOWNLOADED: screenshot @ 2021-08-24 14:09:52
+[[file:images/Lecture_5/2021-08-24_14-09-52_screenshot.png]]
+
+*** Unrepeatable read
+- Transaction A reads data item D1 and sees a different value each time. Between
+  the reads, transaction B has committed a write to D1
+
+#+DOWNLOADED: screenshot @ 2021-08-24 14:11:42
+[[file:images/Lecture_5/2021-08-24_14-11-42_screenshot.png]]
+
+*** Last commit wins
+- Transaction A and B each read data item D1 and then go on to write to D1
+- The last transaction (B) to commit its write wins, overwriting the earlier
+  transaction's write
+
+#+DOWNLOADED: screenshot @ 2021-08-24 14:13:07
+[[file:images/Lecture_5/2021-08-24_14-13-07_screenshot.png]]
+
+- A will now believe that their version of D1 is in the database but this isn't true!
+
+*** Phantom Read
+- A phantom read occurs where a transaction (A) executes a query twice, and the
+  second result includes data that wasn't visible in the first result
+- A concurrently executing transaction (B) inserts data between the other
+  transaction's queries
+
+#+DOWNLOADED: screenshot @ 2021-08-24 14:19:19
+[[file:images/Lecture_5/2021-08-24_14-19-19_screenshot.png]]
+
+** Isolation levels
+
+#+DOWNLOADED: screenshot @ 2021-08-24 14:19:58
+[[file:images/Lecture_5/2021-08-24_14-19-58_screenshot.png]]
+
+** The persistence context
+- JPA's persistence context manages persistent objects; the context:
+  - Servers as a cache that enforces repeatable read semantics
+  - Performs dirty checking of objects the syncs them with the database
+  - Provides a guaranteed scope of object identity
+
+#+DOWNLOADED: screenshot @ 2021-08-24 14:25:05
+[[file:images/Lecture_5/2021-08-24_14-25-05_screenshot.png]]
+
+- Also makes sure that a single objects is only every associated with a single
+  row
+
+** Optimistic concurrency control (OCC)
+- Optimistic concurrency control involves working on a local copy of data and
+  then updating the database
+- OCC uses version numbers for data
+  - Whenever an entity is updated, its version number is incremented
+
+#+DOWNLOADED: screenshot @ 2021-08-24 14:28:14
+[[file:images/Lecture_5/2021-08-24_14-28-14_screenshot.png]]
+
+- New annotation, adds a version number to the table
+
+
+#+DOWNLOADED: screenshot @ 2021-08-24 14:47:07
+[[file:images/Lecture_5/2021-08-24_14-47-07_screenshot.png]]
+
+- Transaction only successful if the database it hasn't been modified by other
+transaction during the runtime of the commit
+- So here the VERSION number must be the same in order of this to commit
+  successfully
+
+** Last Commit Wins -> First Commit Wins
+
+#+DOWNLOADED: screenshot @ 2021-08-24 14:48:12
+[[file:images/Lecture_5/2021-08-24_14-48-12_screenshot.png]]
+
+- Version number on that item has already changed and thus it cannot succeed for
+  Tx B, and thus Tx B is aborted
+- A knows its transaction worked, and B knows that its transaction didn't work,
+  they can book different seats
+  
+** A repeatable read problem
+- Assume a many-to-one relationship between Item and Category
+
+#+DOWNLOADED: screenshot @ 2021-08-24 14:50:05
+[[file:images/Lecture_5/2021-08-24_14-50-05_screenshot.png]]
+
+#+DOWNLOADED: screenshot @ 2021-08-24 14:50:40
+[[file:images/Lecture_5/2021-08-24_14-50-40_screenshot.png]]
+
+- Item 2 was moved during the transaction by another transaction and thus was
+  counted twice in the sum total
+- Calculating the sum of all items across several categories requires that the
+  "get items in each category" is a repeatable read
+
+*** Forced version checking
+
+#+DOWNLOADED: screenshot @ 2021-08-24 14:54:32
+[[file:images/Lecture_5/2021-08-24_14-54-32_screenshot.png]]
+
+- Persistence context now knows that at commit time, have any updates been made
+  to all of the item objects in that query. Because the item has a reference to
+  the category and that changes then the item version changes
+
+
+#+DOWNLOADED: screenshot @ 2021-08-24 14:56:38
+[[file:images/Lecture_5/2021-08-24_14-56-38_screenshot.png]]
+
+** An "invisible conflict" problem
+- Assumptions
+  - Two transactions are bidding on a common Item
+  - The Item currently has 1 bid of $12
+  - Item and Bid are entities related by a many-to-one unidirectional
+    relationship
+  - A Bid has a timestamp; the most recent bid should be the winning bid
+
+#+DOWNLOADED: screenshot @ 2021-08-24 14:57:59
+[[file:images/Lecture_5/2021-08-24_14-57-59_screenshot.png]]
+
+
+#+DOWNLOADED: screenshot @ 2021-08-24 14:58:57
+[[file:images/Lecture_5/2021-08-24_14-58-57_screenshot.png]]
+
+- Both A and B sees that it's OK to go ahead with that transaction at the time,
+  both of those rows have been added to the database, but A has a lower bid than
+  B but A has a higher timestamp
+- Nothing in the Item is ever modified so the versioning numbers don't help here
+
+#+DOWNLOADED: screenshot @ 2021-08-24 14:59:18
+[[file:images/Lecture_5/2021-08-24_14-59-18_screenshot.png]]
+
+*** Forced version increment
+
+#+DOWNLOADED: screenshot @ 2021-08-24 15:01:04
+[[file:images/Lecture_5/2021-08-24_15-01-04_screenshot.png]]
+
+- So when it commits it FORCES a version number increment so that the previous
+  problem is no longer a problem
+- With this new tech on the previous example
+
+
+#+DOWNLOADED: screenshot @ 2021-08-24 15:02:49
+[[file:images/Lecture_5/2021-08-24_15-02-49_screenshot.png]]
+
+- Tx B forced a version increment on it's bid
+
+* Lecture 6
+** Communication Patterns
+*** Synchronous communication
+
+#+DOWNLOADED: screenshot @ 2021-08-26 10:02:51
+[[file:images/Lecture_6/2021-08-26_10-02-51_screenshot.png]]
+
+- Client communicate synchronously with the server over a request reply protocol
+- Clients block while waiting for a reply
+
+*** Publish/ Subscribe Communication
+
+#+DOWNLOADED: screenshot @ 2021-08-26 10:03:25
+[[file:images/Lecture_6/2021-08-26_10-03-25_screenshot.png]]
+
+- Clients  communicate with servers asynchronously using message based protocols
+- Having sent a message, senders do not block
+- Once subscribed, a client receives updates (publish messages) from the server
+
+** Pub/Sub communication
+- Common example of this is the push notification services
+
+#+DOWNLOADED: screenshot @ 2021-08-26 10:06:26
+[[file:images/Lecture_6/2021-08-26_10-06-26_screenshot.png]]
+
+** Uses cases for async communication
+- Chat service, when any chat client pushes a message then the server publishes
+  that message
+- Server side push services
+
+#+DOWNLOADED: screenshot @ 2021-08-26 10:07:32
+[[file:images/Lecture_6/2021-08-26_10-07-32_screenshot.png]]
+
+- Services with long running tasks or priority scheduling, in the mean time the
+  client may want to do something in the mean time while the request is ongoing
+
+** Server side push
+- HTTP requests tend to have short processing durations
+- HTTP servers generally implement a thread-per-request model
+  - An incoming request is serviced by a thread taken from the server's
+    threadpool, afterwards, the thread is returned to the pool
+  - Each incoming request is small thus is fast processing
+  - A few hundred threads can service a few thousand clients (good scalability)
+
+#+DOWNLOADED: screenshot @ 2021-08-26 10:09:08
+[[file:images/Lecture_6/2021-08-26_10-09-08_screenshot.png]]
+
+- Server side push can be implemented over HTTP by the client making a "long
+  poll" request
+  - The client blocks until something happens on the server (eg a state change)
+    that allows the server to return a response
+  - The server maintains the connection with the client for the duration of the
+    request
+  - A single request is all that's required, but this doesn't scale because on
+    the server it takes a thread and HAS TO maintain a socket connection, this
+    isn't scalable 
+
+#+DOWNLOADED: screenshot @ 2021-08-26 10:10:25
+[[file:images/Lecture_6/2021-08-26_10-10-25_screenshot.png]]
+
+** Servlet 3 specification
+
+#+DOWNLOADED: screenshot @ 2021-08-26 10:14:48
+[[file:images/Lecture_6/2021-08-26_10-14-48_screenshot.png]]
+
+- Thread per request handles the request
+- While the clients conditions isn't satisfied it puts the request into the
+  blocked clients queue
+- When the server state changes then the blocked client is moved to the ready
+  clients queue
+- After this there are responser threads that takes items from the ready clients
+  buffer and return responses to the clients. These are dedicated threads that
+  are not associated with the TPR pool 
+
+** JAX-RS: AsyncResponse
+
+#+DOWNLOADED: screenshot @ 2021-08-26 10:23:29
+[[file:images/Lecture_6/2021-08-26_10-23-29_screenshot.png]]
+
+- So the doCalculation suspends itself afterwards and then the resume will be
+  handled by a responder thread
+
+** JAX-RS: AsyncInvoker & Invocation Callback
+
+#+DOWNLOADED: screenshot @ 2021-08-26 10:26:19
+[[file:images/Lecture_6/2021-08-26_10-26-19_screenshot.png]]
+
+- So because the HTTP protocol is blocking we need a way to do futures/promises
+- The client makes a post request using an ASyncInvoker, the callback is called
+  when it's done, when the response comes back then the completed/failed stuff
+  is called on a seperate thread
+
+** Alternative: User of Future<>
+- Rather than use InvocationCallback, we can instead obtain a Future object from
+  the asynchronous request
+- At some point in the future, we call the future's get() method to receive the
+  response (or exception)
+
+#+DOWNLOADED: screenshot @ 2021-08-26 10:29:59
+[[file:images/Lecture_6/2021-08-26_10-29-59_screenshot.png]]
+- Second param is a timeout, then the method throws a timeoutexception, while if
+  the exception of the request is thrown it will be different, otherwise the
+  correct thing will be returned
+
+** Websockets
+- Allows TCP-based full-duplex communication over HTTP ports
+- Provides a standardized way in which clients and servers can agree to
+  "upgrade" a particular HTTP connection to a full-duplex connection
+  - Clients send a HTTP GET request with special headers, indicating they wish
+    to switch to WebSocket communication
+  - If the server supports this and agrees, the server will send back an HTTP
+    response informing the client
+  - Then, the TCP connection will remain open for full-duplex communication
+    until one side chooses to close the connection
+
+** Establishing a WebSocket connection
+
+#+DOWNLOADED: screenshot @ 2021-08-26 10:47:48
+[[file:images/Lecture_6/2021-08-26_10-47-48_screenshot.png]]
+
+- Call them peers when the have entered websockets
+- 101 is the switching protocols response type
+
+** Sec-WebSocket-Key and Sec-WebSocket-Accept
+- Despite the "Sec" in the names, this does not provide any security
+- Intended as a "sanity check", to make sure we're connecting to actual server
+  which actually supports WebSockets
+  - *Sec-WebSocket-Key*: Random bytes, b64 encoded
+  - *Sec-WebSocket-Accept*:
+    - Concatenates the given key with a magic
+    - then sha1 of that
+    - Returns the result of that b64 encoded
+- Client can perform the same calculation to check that the given server
+  response wasn't cached or incorrect
+- Why would a client want to impersonate support for websockets? Maybe they can
+  impersonate another client using that key that has been intercepted
+
+
+#+DOWNLOADED: screenshot @ 2021-08-26 10:53:13
+[[file:images/Lecture_6/2021-08-26_10-53-13_screenshot.png]]
+
+** Exchanging Data
+- Once established, communication over a WebSocket connection is full-duplex -
+  Either party can send data at any time
+- Data is sent as frames. Frames can be either message frames or control frames
+  - Message frames: Contain the data exchanged by a particular application,e g:
+    Chat messages
+  - Control frames: dictate other operations, eg:
+    - Closing the connection
+    - Sending a ping (or replying w/ a pong)
+- Large messages can be split across multiple frames if required
+
+** Structure of a frame 
+
+#+DOWNLOADED: screenshot @ 2021-08-26 11:22:43
+[[file:images/Lecture_6/2021-08-26_11-22-43_screenshot.png]]
+
+** Ping/Pong
+- While a connection is ongoing, either peer may send a "ping" opcode (Ox9) to
+  the other
+  - The receiver must send a "pong" (Opcode 0xA) back in a timely fashion
+- The "ping" can contain any payload up to 125 bytes in length
+  - The pong should response with the same payload
+- This mechanism allows either peer to confirm that a connection is still
+  "alive" at any stage
+
+** Comparison with raw TCP sockets
+- TCP
+  - Deals with raw bytes
+  - Little to no overhead
+  - Requires seperate listeners server side
+  - Does not leverage HTTP traffic optimization
+  - Not supported by webbrowsers
+- Websockets
+  - Deals with messages
+  - Frames introduce protocol overhead
+  - Can establish through existing HTTP servers
+  - Leverage HTTP traffic optimization
+  - Natively supported in all modern browsers
+
+** Trade-offs with Asynchronous Web Services
+- Websockets
+  - Maintains an active connection at all times: can consume more resources
+  - No need to constantly re-establish connection
+  - Usually preferred in cases where data needs to be exchanged frequently and
+    bi-directionally between client and server
+- Async web services
+  - Conserve CPU by sleeping handler threads until response data is available
+  - Conserve network by only maintaining connections when data is expected
+  - Clients must re-establish connection every time new data is expected
+  - Usually preferred in cases where data exchange can be more sporadic;
+    real-time communication is not a priority
+
+** WebSockets in Java
+- Java includes an API for WebSocket client and server development JSR356
+- Like other APIs we have seen in this course (JAX-RS, JPA), JSR 356 is /not an
+  implementation/
+  - All modern servlet containers such as Jetty and Tomcat provide
+    implementations of the standard
+  - For client development, Tyrus (the reference implementation) is a good
+    choice
+
+#+DOWNLOADED: screenshot @ 2021-08-26 11:47:45
+[[file:images/Lecture_6/2021-08-26_11-47-45_screenshot.png]]
+
+- API dependency
+  - Don't need to import dependencies for the server-side implementation
+  - The servlet container will already have the implementation bundled with them
+- Client dependency
+  - Full implementation, for clients not being run on servlet containers
+
+** WebSocket Server
+
+- Server class
+#+DOWNLOADED: screenshot @ 2021-08-26 11:54:15
+[[file:images/Lecture_6/2021-08-26_11-54-15_screenshot.png]]
+
+- Client class
+
+#+DOWNLOADED: screenshot @ 2021-08-26 11:55:39
+[[file:images/Lecture_6/2021-08-26_11-55-39_screenshot.png]]
+
+** Creating a connection
+
+#+DOWNLOADED: screenshot @ 2021-08-26 11:56:08
+[[file:images/Lecture_6/2021-08-26_11-56-08_screenshot.png]]
+
+- Actually implementation means whatever is hosting your servlet
+- Session auto closed because it's defined in the try block
+
+** Sending and Receiving Data
+- Data sent between peers over WebSockets can be either binary or text data
+  - We can have our endpoints accept both kinds of data if we like, by having
+    two @OnMessage methods (one for each type of data)
+- JSR 356 provides support for marshalling/unmarhsalling between POJOs and
+  text/binary data, through the use of Encoders and Decoders
+  - To create an encoder class, we implement one of these four interfaces:
+
+#+DOWNLOADED: screenshot @ 2021-08-26 11:59:53
+[[file:images/Lecture_6/2021-08-26_11-59-53_screenshot.png]]
+
+- Similar interfaces to implement decoders
+
+** Encoder and Decoder examples
+
+#+DOWNLOADED: screenshot @ 2021-08-26 20:21:37
+[[file:images/Lecture_6/2021-08-26_20-21-37_screenshot.png]]
+
+- Jackson object mapper to write value as a string
+- EncodeException is the only sort of exception that we can throw in this method
+
+
+#+DOWNLOADED: screenshot @ 2021-08-26 20:23:24
+[[file:images/Lecture_6/2021-08-26_20-23-24_screenshot.png]]
+
+** Receiving data
+- Recieving data: @OnMessage- annotated methods in our endpoint implementations
+  - We can have *at most one* method to receive text, and at most one for binary
+    data
+
+#+DOWNLOADED: screenshot @ 2021-08-26 20:25:59
+[[file:images/Lecture_6/2021-08-26_20-25-59_screenshot.png]]
+
+** Sending data
+- To send data to the other peer, we need a reference to the Session instance
+  corresponding to that connection (obtained in the @OnOpen method). Then:
+
+
+#+DOWNLOADED: screenshot @ 2021-08-26 20:28:26
+[[file:images/Lecture_6/2021-08-26_20-28-26_screenshot.png]]
+
+** WebSocket client: Javascript
+
+#+DOWNLOADED: screenshot @ 2021-08-26 20:28:49
+[[file:images/Lecture_6/2021-08-26_20-28-49_screenshot.png]]
+
+- WS supported in all major browsers
 * Tutorial 1
 ** Question 1: Given these characteristics, what are three possible outcomes when trying to send a message from one host to another?
 - While the two computers have set up a session the link fails
@@ -1449,3 +2182,15 @@
 	- elseif book not found: 404 response
 	- elseif book is already on load: 400? 409?
 	- else 201: no content
+* Tutorial 3?
+all done online
+* Tutorial 4
+** A
+- Long reply time for the query so that it doesn't have to wait
+- Or if you want pub/sub type thing
+- Server doesn't want to have to wait either, waste of resources. Just wants to
+  be able to suspend and them come back
+** C
+- Don't do a chat message service, as the client would have to do
+  resubscriptions to recieve each message
+

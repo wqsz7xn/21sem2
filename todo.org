@@ -1,32 +1,23 @@
 * 306 :306:
 ** DONE Start group project and go to next meeting 
    DEADLINE: <2021-07-28 Wed>
-** TODO Multiple parents task
-** Multiple Children
-** Multiple Parents
-** Find out if we want to use functional return types Maybe/Either
-*** if they do change startTime and duration to use these types
-**** another option is use integer which is nullable
-** Edge should have parent and child
-** Change the names to edge and node/vertex
-** Do your parser on the side (not important)
-** TODO Implement the GraphStream stuff that you have been assigned
+** DONE Multiple parents task
+** DONE Implement the GraphStream stuff that you have been assigned
    DEADLINE: <2021-08-08 Sun>
-** TODO Perhaps look at the 2020 second place (it's a mess)
+** DONE Perhaps look at the 2020 second place (it's a mess)
    DEADLINE: <2021-08-08 Sun>
-** TODO Physically print the handout
-   DEADLINE: <2021-08-02 Mon>
-** Agenda topics
-*** Ask the algorithm people if they have any needs for the data structures that they are using
 * 325 :325:
-** TODO Watch the new lecture recordings and do the lab
-   DEADLINE: <2021-08-01 Sun>
+** Lab 2
+   DEADLINE: <2021-08-13 Fri>
+** Lab 3
+   DEADLINE: <2021-08-13 Fri>
 * 711 :711:
 ** TODO Assignment 1
    DEADLINE: <2021-08-18 Wed>
-** TODO Physically print the handout
-   DEADLINE: <2021-08-02 Mon>
-** Ask how rigorous our proof have to be
+** TODO Assignment 2
+   DEADLINE: <2021-08-21 Sat>
+** TODO Ask about these questions
+*** How do we go from the end of one phase to the start of another?
 * Misc
 ** DONE Pub quiz
    DEADLINE: <2021-07-28 Wed>
